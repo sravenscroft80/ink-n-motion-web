@@ -10,6 +10,7 @@ import {
   getGenerationErrorResponse,
   logGenerationFailure,
 } from "@/lib/generation-errors";
+import { parseIsolateFlag } from "@/lib/parse-isolate";
 import { isReplicateConfigured } from "@/lib/replicate";
 
 export const runtime = "nodejs";
@@ -20,6 +21,7 @@ interface ComicRequestBody {
   story?: string;
   style?: string;
   pages?: number;
+  isolate?: unknown;
 }
 
 function isValidImageUrl(value: string): boolean {
@@ -45,12 +47,20 @@ export async function POST(request: Request) {
     body = (await request.json()) as ComicRequestBody;
   } catch {
     return NextResponse.json(
-      { error: "Invalid JSON body. Expected { imageUrl, story, style, pages }." },
+      { error: "Invalid JSON body. Expected { imageUrl, story, style, pages, isolate? }." },
       { status: 400 },
     );
   }
 
-  const { imageUrl, story, style, pages } = body;
+  const { imageUrl, story, style, pages, isolate: isolateRaw } = body;
+
+  const isolate = parseIsolateFlag(isolateRaw);
+  if (isolate === null) {
+    return NextResponse.json(
+      { error: "isolate must be a boolean when provided." },
+      { status: 400 },
+    );
+  }
 
   if (!imageUrl || typeof imageUrl !== "string" || !isValidImageUrl(imageUrl)) {
     return NextResponse.json(
@@ -104,6 +114,7 @@ export async function POST(request: Request) {
       story.trim(),
       style,
       pageCount,
+      isolate,
     );
 
     const creditsRemaining = await getCredits();

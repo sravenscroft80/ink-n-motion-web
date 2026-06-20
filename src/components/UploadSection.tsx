@@ -2,10 +2,16 @@
 
 import { STYLE_PACKS } from "@/lib/style-packs";
 import type { StylePack } from "@/lib/types";
+import {
+  TattooRenderModeToggle,
+  type TattooRenderMode,
+} from "@/components/TattooRenderModeToggle";
 
 interface UploadSectionProps {
   selectedStyle: StylePack;
   onStyleChange: (style: StylePack) => void;
+  renderMode: TattooRenderMode;
+  onRenderModeChange: (mode: TattooRenderMode) => void;
   previewUrl: string | null;
   onFileSelect: (file: File | null) => void;
   onGenerate: () => void;
@@ -16,6 +22,8 @@ interface UploadSectionProps {
 export function UploadSection({
   selectedStyle,
   onStyleChange,
+  renderMode,
+  onRenderModeChange,
   previewUrl,
   onFileSelect,
   onGenerate,
@@ -121,6 +129,12 @@ export function UploadSection({
               ))}
             </select>
           </div>
+
+          <TattooRenderModeToggle
+            value={renderMode}
+            onChange={onRenderModeChange}
+            id="still-render-mode"
+          />
 
           <button
             type="button"

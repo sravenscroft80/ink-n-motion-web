@@ -16,10 +16,19 @@ const DEFAULT_VERSION =
 const TATTOO_ISOLATION_PREFIX =
   "isolated tattoo design flash sheet on plain white background, extract and render ONLY the tattoo artwork, clean graphic linework, no skin, no limbs, no body, no photograph";
 
-const NEGATIVE_PROMPT =
+const ISOLATED_NEGATIVE_PROMPT =
   "skin, flesh, arm, hand, wrist, finger, limb, body, torso, leg, face, neck, " +
   "realistic photograph, photo background, camera, room, clutter, " +
   "blurry, low quality, watermark, text, ugly, deformed, distorted, amateur";
+
+const ON_SKIN_NEGATIVE_PROMPT =
+  "blurry, low quality, watermark, text, ugly, deformed, distorted, amateur";
+
+export interface GenerateRenderOptions {
+  scenePrompt?: string;
+  /** When true, run background removal before stylization. Default false. */
+  isolate?: boolean;
+}
 
 function resolveStylizeModelTarget():
   | { model: string; version?: never }
@@ -31,35 +40,59 @@ function resolveStylizeModelTarget():
   return parseModelSpec(configured);
 }
 
-function buildStylizePrompt(stylePrompt: string, scene?: string): string {
-  if (scene) {
-    return `${TATTOO_ISOLATION_PREFIX}, comic book panel, ${scene}, ${stylePrompt}`;
+function buildStylizePrompt(
+  stylePrompt: string,
+  isolate: boolean,
+  scene?: string,
+): string {
+  if (isolate) {
+    if (scene) {
+      return `${TATTOO_ISOLATION_PREFIX}, comic book panel, ${scene}, ${stylePrompt}`;
+    }
+    return `${TATTOO_ISOLATION_PREFIX}, ${stylePrompt}`;
   }
-  return `${TATTOO_ISOLATION_PREFIX}, ${stylePrompt}`;
+
+  if (scene) {
+    return `comic book panel illustration, ${scene}, tattoo art on skin, ${stylePrompt}`;
+  }
+  return `tattoo art, comic book illustration on skin, ${stylePrompt}`;
+}
+
+function wrapTimeoutError(error: GenerationError, isolate: boolean): GenerationError {
+  if (!isolate || !error.message.includes("timed out")) {
+    return error;
+  }
+  return new GenerationError(
+    "Generation timed out after 60 seconds. Isolate tattoo runs two AI steps and can exceed the Hobby limit — try Keep on skin, or try again.",
+    error.stage,
+    error,
+  );
 }
 
 export async function generateComicRender(
   imageUrl: string,
   stylePack: StylePack,
-  scenePrompt?: string,
+  options: GenerateRenderOptions = {},
 ): Promise<string> {
   if (!isStylePack(stylePack)) {
     throw new GenerationError("Invalid style pack", "stylize");
   }
 
-  const prepared = await prepareTattooImage(imageUrl);
+  const isolate = options.isolate ?? false;
   const stylePrompt = getStylePrompt(stylePack);
-  const scene = scenePrompt?.trim();
-  const prompt = buildStylizePrompt(stylePrompt, scene);
+  const scene = options.scenePrompt?.trim();
+  const prompt = buildStylizePrompt(stylePrompt, isolate, scene);
 
   try {
+    const prepared = await prepareTattooImage(imageUrl, isolate);
+
     return await runReplicateWithTarget(
       resolveStylizeModelTarget(),
       {
         image: prepared.url,
         prompt,
-        negative_prompt: NEGATIVE_PROMPT,
-        prompt_strength: 0.82,
+        negative_prompt: isolate ? ISOLATED_NEGATIVE_PROMPT : ON_SKIN_NEGATIVE_PROMPT,
+        prompt_strength: isolate ? 0.82 : 0.75,
         num_inference_steps: 30,
         guidance_scale: 7.5,
         num_outputs: 1,
@@ -69,7 +102,7 @@ export async function generateComicRender(
     );
   } catch (error) {
     if (error instanceof GenerationError) {
-      throw error;
+      throw wrapTimeoutError(error, isolate);
     }
     throw new GenerationError(
       error instanceof Error ? error.message : "Stylization failed",

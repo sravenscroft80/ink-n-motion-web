@@ -5,6 +5,7 @@ import {
   logGenerationFailure,
 } from "@/lib/generation-errors";
 import { generateComicRender, isReplicateConfigured } from "@/lib/replicate";
+import { parseIsolateFlag } from "@/lib/parse-isolate";
 import { isStylePack } from "@/lib/style-packs";
 import type { StylePack } from "@/lib/types";
 
@@ -14,6 +15,7 @@ export const maxDuration = 60;
 interface GenerateRequestBody {
   imageUrl?: string;
   stylePack?: string;
+  isolate?: unknown;
 }
 
 function isValidImageUrl(value: string): boolean {
@@ -39,12 +41,20 @@ export async function POST(request: Request) {
     body = (await request.json()) as GenerateRequestBody;
   } catch {
     return NextResponse.json(
-      { error: "Invalid JSON body. Expected { imageUrl, stylePack }." },
+      { error: "Invalid JSON body. Expected { imageUrl, stylePack, isolate? }." },
       { status: 400 },
     );
   }
 
-  const { imageUrl, stylePack } = body;
+  const { imageUrl, stylePack, isolate: isolateRaw } = body;
+
+  const isolate = parseIsolateFlag(isolateRaw);
+  if (isolate === null) {
+    return NextResponse.json(
+      { error: "isolate must be a boolean when provided." },
+      { status: 400 },
+    );
+  }
 
   if (!imageUrl || typeof imageUrl !== "string" || !isValidImageUrl(imageUrl)) {
     return NextResponse.json(
@@ -72,7 +82,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const outputUrl = await generateComicRender(imageUrl, stylePack as StylePack);
+    const outputUrl = await generateComicRender(imageUrl, stylePack as StylePack, {
+      isolate,
+    });
     const creditsRemaining = await getCredits();
 
     return NextResponse.json({ outputUrl, creditsRemaining });

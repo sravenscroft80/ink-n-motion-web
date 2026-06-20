@@ -10,17 +10,25 @@ export interface PreparedTattooImage {
 }
 
 /**
- * Optional preprocessing: when REPLICATE_EXTRACT_MODEL is set, run background
- * removal before img2img so skin/limbs are less likely to reach the stylizer.
- * When unset, returns the original URL unchanged.
+ * When isolate is false, returns the original URL unchanged.
+ * When isolate is true, runs REPLICATE_EXTRACT_MODEL (required).
  */
 export async function prepareTattooImage(
   imageUrl: string,
+  isolate: boolean,
 ): Promise<PreparedTattooImage> {
-  const extractModel = process.env.REPLICATE_EXTRACT_MODEL?.trim();
-  if (!extractModel || !isExtractModelConfigured()) {
+  if (!isolate) {
     return { url: imageUrl, extracted: false };
   }
+
+  if (!isExtractModelConfigured()) {
+    throw new GenerationError(
+      "Isolate tattoo is not available — REPLICATE_EXTRACT_MODEL must be configured on the server.",
+      "extract",
+    );
+  }
+
+  const extractModel = process.env.REPLICATE_EXTRACT_MODEL!.trim();
 
   try {
     const outputUrl = await runReplicateModel(

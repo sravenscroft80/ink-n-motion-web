@@ -10,6 +10,7 @@ export interface StylePackOption {
 export interface GenerateRequest {
   imageUrl: string;
   stylePack: StylePack;
+  isolate?: boolean;
 }
 
 export interface GenerateResponse {
@@ -19,6 +20,7 @@ export interface GenerateResponse {
 
 export interface GenerateErrorResponse {
   error: string;
+  stage?: string;
 }
 
 export interface UploadResponse {

@@ -8,6 +8,10 @@ import { ResultView } from "@/components/ResultView";
 import { SeeItStrip } from "@/components/SeeItStrip";
 import { UploadSection } from "@/components/UploadSection";
 import ComicBook from "@/components/ComicBook";
+import {
+  tattooRenderModeToIsolate,
+  type TattooRenderMode,
+} from "@/components/TattooRenderModeToggle";
 import { getStylePack } from "@/lib/style-packs";
 import type { GenerateErrorResponse, GenerateResponse, StylePack } from "@/lib/types";
 
@@ -24,6 +28,7 @@ export function HomePage({
 }: HomePageProps) {
   const [credits, setCredits] = useState(initialCredits);
   const [selectedStyle, setSelectedStyle] = useState<StylePack>("classic-comic");
+  const [renderMode, setRenderMode] = useState<TattooRenderMode>("on-skin");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
@@ -94,6 +99,7 @@ export function HomePage({
         body: JSON.stringify({
           imageUrl: uploadData.url,
           stylePack: selectedStyle,
+          isolate: tattooRenderModeToIsolate(renderMode),
         }),
       });
 
@@ -186,6 +192,8 @@ export function HomePage({
         <UploadSection
           selectedStyle={selectedStyle}
           onStyleChange={setSelectedStyle}
+          renderMode={renderMode}
+          onRenderModeChange={setRenderMode}
           previewUrl={previewUrl}
           onFileSelect={handleFileSelect}
           onGenerate={() => void handleGenerate()}

@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import {
+  TattooRenderModeToggle,
+  tattooRenderModeToIsolate,
+  type TattooRenderMode,
+} from "@/components/TattooRenderModeToggle";
+import {
   COMIC_STYLES,
   type Comic,
   type ComicStyle,
@@ -19,6 +24,7 @@ export default function ComicBook({ onCreditsChange }: ComicBookProps) {
   const [story, setStory] = useState("");
   const [style, setStyle] = useState<ComicStyle>("classic-comic");
   const [pages, setPages] = useState(MIN_PAGES);
+  const [renderMode, setRenderMode] = useState<TattooRenderMode>("on-skin");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [comic, setComic] = useState<Comic | null>(null);
@@ -57,7 +63,13 @@ export default function ComicBook({ onCreditsChange }: ComicBookProps) {
       const res = await fetch("/api/comic", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrl: url, story, style, pages }),
+        body: JSON.stringify({
+          imageUrl: url,
+          story,
+          style,
+          pages,
+          isolate: tattooRenderModeToIsolate(renderMode),
+        }),
       });
 
       if (!res.ok) {
@@ -167,6 +179,12 @@ export default function ComicBook({ onCreditsChange }: ComicBookProps) {
               />
             </label>
           </div>
+
+          <TattooRenderModeToggle
+            value={renderMode}
+            onChange={setRenderMode}
+            id="comic-render-mode"
+          />
 
           {error && (
             <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">

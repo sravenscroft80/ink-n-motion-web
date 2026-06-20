@@ -8,18 +8,20 @@ export async function generateComic(
   story: string,
   style: ComicStyle,
   pageCount: number,
+  isolate: boolean,
 ): Promise<Comic> {
   const { title, captions } = buildComicScript(story, pageCount);
   const pages: Comic["pages"] = [];
 
   for (let index = 0; index < captions.length; index += 1) {
     const caption = captions[index];
-    const scenePrompt = `story panel ${index + 1}: ${caption}, tattoo design only on white background`;
-    const image = await generateComicRender(
-      imageUrl,
-      style as StylePack,
+    const scenePrompt = isolate
+      ? `story panel ${index + 1}: ${caption}, tattoo design only on white background`
+      : `page ${index + 1} of ${pageCount}, narrative scene: ${caption}`;
+    const image = await generateComicRender(imageUrl, style as StylePack, {
       scenePrompt,
-    );
+      isolate,
+    });
     pages.push({ caption, image });
   }
 
