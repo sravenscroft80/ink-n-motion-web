@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" role="img" aria-label="Wolf tattoo before">
+  <defs>
+    <linearGradient id="skin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3f3028"/>
+      <stop offset="100%" stop-color="#251a15"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#skin)"/>
+  <path d="M130 300 L170 180 L200 220 L230 180 L270 300 L240 340 L160 340 Z" fill="none" stroke="#151515" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="175" cy="250" r="5" fill="#151515"/>
+  <circle cx="225" cy="250" r="5" fill="#151515"/>
+  <path d="M190 280 Q200 295 210 280" fill="none" stroke="#151515" stroke-width="2"/>
+  <text x="200" y="460" text-anchor="middle" fill="#ffffff" fill-opacity="0.35" font-family="system-ui,sans-serif" font-size="14">Sample before photo</text>
+</svg>

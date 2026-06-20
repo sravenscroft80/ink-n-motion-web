@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" role="img" aria-label="Dragon tattoo on arm">
+  <defs>
+    <linearGradient id="skin" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4a3728"/>
+      <stop offset="100%" stop-color="#2e2118"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#skin)"/>
+  <path d="M80 350 Q200 120 320 320 Q240 380 180 400 Q120 390 80 350 Z" fill="none" stroke="#111" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M140 280 Q180 240 220 260 Q200 300 160 320 Z" fill="none" stroke="#111" stroke-width="2"/>
+  <circle cx="250" cy="220" r="8" fill="#111"/>
+  <text x="200" y="460" text-anchor="middle" fill="#ffffff" fill-opacity="0.35" font-family="system-ui,sans-serif" font-size="14">Sample before photo</text>
+</svg>

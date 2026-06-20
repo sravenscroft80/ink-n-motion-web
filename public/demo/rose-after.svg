@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" role="img" aria-label="Rose noir render">
+  <defs>
+    <radialGradient id="fade" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="500" fill="#0a0a0a"/>
+  <rect x="0" y="0" width="400" height="500" fill="url(#fade)" opacity="0.6"/>
+  <circle cx="200" cy="230" r="75" fill="#111" stroke="#fff" stroke-width="3"/>
+  <path d="M200 305 L200 390" stroke="#fff" stroke-width="4"/>
+  <path d="M200 240 C165 205 145 240 162 268 C179 296 200 285 200 285 C200 285 221 296 238 268 C255 240 235 205 200 240 Z" fill="#222" stroke="#fff" stroke-width="3"/>
+  <text x="200" y="460" text-anchor="middle" fill="#999" font-family="system-ui,sans-serif" font-size="14" font-weight="600">Noir</text>
+</svg>

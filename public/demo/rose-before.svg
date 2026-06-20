@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" role="img" aria-label="Rose tattoo before">
+  <defs>
+    <linearGradient id="skin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#452a2a"/>
+      <stop offset="100%" stop-color="#1f1414"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#skin)"/>
+  <circle cx="200" cy="240" r="70" fill="none" stroke="#1a1a1a" stroke-width="2.5"/>
+  <path d="M200 310 L200 380" stroke="#1a1a1a" stroke-width="3"/>
+  <path d="M200 250 C170 220 150 250 165 275 C180 300 200 290 200 290 C200 290 220 300 235 275 C250 250 230 220 200 250 Z" fill="none" stroke="#1a1a1a" stroke-width="2.5"/>
+  <text x="200" y="460" text-anchor="middle" fill="#ffffff" fill-opacity="0.35" font-family="system-ui,sans-serif" font-size="14">Sample before photo</text>
+</svg>

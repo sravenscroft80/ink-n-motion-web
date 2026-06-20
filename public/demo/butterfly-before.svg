@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" role="img" aria-label="Butterfly tattoo on forearm">
+  <defs>
+    <linearGradient id="skin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3d2a24"/>
+      <stop offset="50%" stop-color="#5c4033"/>
+      <stop offset="100%" stop-color="#2a1d18"/>
+    </linearGradient>
+    <radialGradient id="light" cx="30%" cy="20%" r="70%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#skin)"/>
+  <rect width="400" height="500" fill="url(#light)"/>
+  <ellipse cx="200" cy="260" rx="120" ry="160" fill="#000" fill-opacity="0.08"/>
+  <path d="M200 180 C160 200 130 240 140 280 C150 320 180 340 200 330 C220 340 250 320 260 280 C270 240 240 200 200 180 Z" fill="none" stroke="#1a1a1a" stroke-width="3"/>
+  <path d="M200 200 L200 310 M170 230 L230 230 M165 270 L235 270" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+  <text x="200" y="460" text-anchor="middle" fill="#ffffff" fill-opacity="0.35" font-family="system-ui,sans-serif" font-size="14">Sample before photo</text>
+</svg>

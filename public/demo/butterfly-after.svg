@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" role="img" aria-label="Butterfly classic comic render">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5b3fd4"/>
+      <stop offset="45%" stop-color="#c026d3"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <pattern id="dots" width="8" height="8" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#000" fill-opacity="0.25"/>
+    </pattern>
+  </defs>
+  <rect width="400" height="500" fill="url(#bg)"/>
+  <rect width="400" height="500" fill="url(#dots)"/>
+  <path d="M200 120 L200 380 M120 200 L280 200" stroke="#000" stroke-width="4"/>
+  <path d="M200 160 C150 180 120 230 135 290 C150 350 175 370 200 360 C225 370 250 350 265 290 C280 230 250 180 200 160 Z" fill="#ff4d8d" stroke="#000" stroke-width="5"/>
+  <path d="M200 200 L200 320 M165 235 L235 235 M160 280 L240 280" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+  <text x="200" y="460" text-anchor="middle" fill="#fff" fill-opacity="0.9" font-family="system-ui,sans-serif" font-size="14" font-weight="600">Classic Comic</text>
+</svg>

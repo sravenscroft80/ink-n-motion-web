@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" role="img" aria-label="Dragon manga render">
+  <rect width="400" height="500" fill="#f5f5f5"/>
+  <pattern id="tone" width="6" height="6" patternUnits="userSpaceOnUse">
+    <line x1="0" y1="6" x2="6" y2="0" stroke="#bbb" stroke-width="0.8"/>
+  </pattern>
+  <rect x="40" y="40" width="320" height="420" fill="url(#tone)" opacity="0.5"/>
+  <path d="M70 360 Q200 100 330 330 Q250 400 170 410 Q100 390 70 360 Z" fill="none" stroke="#000" stroke-width="4"/>
+  <path d="M130 270 Q175 230 215 255 Q195 295 150 315 Z" fill="#ddd" stroke="#000" stroke-width="2"/>
+  <circle cx="248" cy="215" r="10" fill="#fff" stroke="#000" stroke-width="2"/>
+  <circle cx="251" cy="215" r="3" fill="#000"/>
+  <text x="200" y="460" text-anchor="middle" fill="#333" font-family="system-ui,sans-serif" font-size="14" font-weight="600">Manga</text>
+</svg>
