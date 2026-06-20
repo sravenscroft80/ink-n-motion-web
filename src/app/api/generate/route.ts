@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { deductCredit, getCredits } from "@/lib/credits";
-import { generateComicRender } from "@/lib/replicate";
+import {
+  getGenerationErrorResponse,
+  logGenerationFailure,
+} from "@/lib/generation-errors";
+import { generateComicRender, isReplicateConfigured } from "@/lib/replicate";
 import { isStylePack } from "@/lib/style-packs";
 import type { StylePack } from "@/lib/types";
 
@@ -22,9 +26,9 @@ function isValidImageUrl(value: string): boolean {
 }
 
 export async function POST(request: Request) {
-  if (!process.env.REPLICATE_API_TOKEN?.trim()) {
+  if (!isReplicateConfigured()) {
     return NextResponse.json(
-      { error: "Generation not configured" },
+      { error: "Generation not configured", stage: "replicate_create" },
       { status: 500 },
     );
   }
@@ -73,15 +77,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ outputUrl, creditsRemaining });
   } catch (error) {
-    console.error("Generate error:", error);
+    logGenerationFailure("generate", error);
     const { addCredits } = await import("@/lib/credits");
     await addCredits(1);
 
-    const message =
-      error instanceof Error ? error.message : "Generation failed. Please try again.";
+    const { message, stage, status } = getGenerationErrorResponse(error);
 
-    const status = message.includes("timed out") ? 504 : 500;
-
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message, stage }, { status });
   }
 }

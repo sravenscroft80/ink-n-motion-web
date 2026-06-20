@@ -1,98 +1,41 @@
-import Replicate from "replicate";
+import { GenerationError } from "./generation-errors";
+import {
+  isExtractModelConfigured,
+  isReplicateConfigured,
+  parseModelSpec,
+  runReplicateModel,
+  runReplicateWithTarget,
+} from "./replicate-runner";
 import { getStylePrompt, isStylePack } from "./style-packs";
+import { prepareTattooImage } from "./tattoo-extract";
 import type { StylePack } from "./types";
 
 const DEFAULT_VERSION =
   "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b";
 
-export const GENERATION_TIMEOUT_MS = 60_000;
-const POLL_INTERVAL_MS = 1_000;
+const TATTOO_ISOLATION_PREFIX =
+  "isolated tattoo design flash sheet on plain white background, extract and render ONLY the tattoo artwork, clean graphic linework, no skin, no limbs, no body, no photograph";
 
 const NEGATIVE_PROMPT =
+  "skin, flesh, arm, hand, wrist, finger, limb, body, torso, leg, face, neck, " +
+  "realistic photograph, photo background, camera, room, clutter, " +
   "blurry, low quality, watermark, text, ugly, deformed, distorted, amateur";
 
-function getReplicateClient(): Replicate {
-  const token = process.env.REPLICATE_API_TOKEN?.trim();
-  if (!token) {
-    throw new Error("REPLICATE_API_TOKEN is not configured");
-  }
-  return new Replicate({ auth: token });
-}
-
-function resolveModelTarget():
+function resolveStylizeModelTarget():
   | { model: string; version?: never }
   | { version: string; model?: never } {
   const configured = process.env.REPLICATE_MODEL?.trim();
-
   if (!configured) {
     return { version: DEFAULT_VERSION };
   }
-
-  if (configured.includes(":")) {
-    const [, version] = configured.split(":");
-    if (version) {
-      return { version };
-    }
-  }
-
-  return { model: configured };
+  return parseModelSpec(configured);
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function pollPrediction(
-  client: Replicate,
-  predictionId: string,
-): Promise<unknown> {
-  const deadline = Date.now() + GENERATION_TIMEOUT_MS;
-
-  while (Date.now() < deadline) {
-    const prediction = await client.predictions.get(predictionId);
-
-    if (prediction.status === "succeeded") {
-      return prediction.output;
-    }
-
-    if (prediction.status === "failed" || prediction.status === "canceled") {
-      const detail =
-        typeof prediction.error === "string"
-          ? prediction.error
-          : "Replicate prediction failed";
-      throw new Error(detail);
-    }
-
-    await sleep(POLL_INTERVAL_MS);
+function buildStylizePrompt(stylePrompt: string, scene?: string): string {
+  if (scene) {
+    return `${TATTOO_ISOLATION_PREFIX}, comic book panel, ${scene}, ${stylePrompt}`;
   }
-
-  throw new Error("Generation timed out after 60 seconds");
-}
-
-function extractOutputUrl(output: unknown): string | null {
-  if (typeof output === "string" && output.startsWith("http")) {
-    return output;
-  }
-
-  if (Array.isArray(output) && output.length > 0) {
-    const first = output[0];
-    if (typeof first === "string" && first.startsWith("http")) {
-      return first;
-    }
-  }
-
-  if (output && typeof output === "object" && "url" in output) {
-    const url = (output as { url?: unknown }).url;
-    if (typeof url === "function") {
-      const resolved = url();
-      return typeof resolved === "string" ? resolved : null;
-    }
-    if (typeof url === "string") {
-      return url;
-    }
-  }
-
-  return null;
+  return `${TATTOO_ISOLATION_PREFIX}, ${stylePrompt}`;
 }
 
 export async function generateComicRender(
@@ -101,47 +44,43 @@ export async function generateComicRender(
   scenePrompt?: string,
 ): Promise<string> {
   if (!isStylePack(stylePack)) {
-    throw new Error("Invalid style pack");
+    throw new GenerationError("Invalid style pack", "stylize");
   }
 
-  const client = getReplicateClient();
+  const prepared = await prepareTattooImage(imageUrl);
   const stylePrompt = getStylePrompt(stylePack);
   const scene = scenePrompt?.trim();
-  const prompt = scene
-    ? `comic book panel illustration, ${scene}, tattoo art, ${stylePrompt}`
-    : `tattoo art, comic book illustration, ${stylePrompt}`;
-  const target = resolveModelTarget();
+  const prompt = buildStylizePrompt(stylePrompt, scene);
 
-  const input = {
-    image: imageUrl,
-    prompt,
-    negative_prompt: NEGATIVE_PROMPT,
-    prompt_strength: 0.75,
-    num_inference_steps: 30,
-    guidance_scale: 7.5,
-    num_outputs: 1,
-    disable_safety_checker: false,
-  };
-
-  const prediction = await client.predictions.create({
-    ...target,
-    input,
-  });
-
-  if (!prediction.id) {
-    throw new Error("Replicate did not return a prediction id");
+  try {
+    return await runReplicateWithTarget(
+      resolveStylizeModelTarget(),
+      {
+        image: prepared.url,
+        prompt,
+        negative_prompt: NEGATIVE_PROMPT,
+        prompt_strength: 0.82,
+        num_inference_steps: 30,
+        guidance_scale: 7.5,
+        num_outputs: 1,
+        disable_safety_checker: false,
+      },
+      "stylize",
+    );
+  } catch (error) {
+    if (error instanceof GenerationError) {
+      throw error;
+    }
+    throw new GenerationError(
+      error instanceof Error ? error.message : "Stylization failed",
+      "stylize",
+      error,
+    );
   }
-
-  const output = await pollPrediction(client, prediction.id);
-  const outputUrl = extractOutputUrl(output);
-
-  if (!outputUrl) {
-    throw new Error("Replicate returned an unexpected response format");
-  }
-
-  return outputUrl;
 }
 
-export function isReplicateConfigured(): boolean {
-  return Boolean(process.env.REPLICATE_API_TOKEN?.trim());
-}
+export {
+  isExtractModelConfigured,
+  isReplicateConfigured,
+  runReplicateModel,
+};

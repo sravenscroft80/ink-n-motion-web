@@ -3,7 +3,7 @@ import type { StylePack } from "./types";
 export type ComicStyle = StylePack;
 
 export const MIN_PAGES = 1;
-export const MAX_PAGES = 4;
+export const MAX_PAGES = 1;
 
 export const COMIC_STYLES: Record<
   ComicStyle,

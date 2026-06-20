@@ -4,7 +4,7 @@
       "maxDuration": 60
     },
     "src/app/api/comic/route.ts": {
-      "maxDuration": 300
+      "maxDuration": 60
     }
   }
 }
