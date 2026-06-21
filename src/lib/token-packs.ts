@@ -23,14 +23,14 @@ export const TOKEN_PACKS: Record<TokenPackKey, TokenPackConfig> = {
     name: "Try It",
     priceUsd: 4.99,
     tokens: 25,
-    productId: "prod_UkJQXZKRA8YBXx",
+    productId: "prod_UkKrOeSZWAk1cz",
   },
   CREATOR: {
     key: TOKEN_PACK_KEYS.CREATOR,
     name: "Creator",
     priceUsd: 12.99,
     tokens: 80,
-    productId: "prod_UkJRUNw0hOE15R",
+    productId: "prod_UkKsg3nQiTqz9Q",
     badge: "Most Popular",
   },
   ELITE: {
@@ -38,7 +38,7 @@ export const TOKEN_PACKS: Record<TokenPackKey, TokenPackConfig> = {
     name: "Elite",
     priceUsd: 24.99,
     tokens: 200,
-    productId: "prod_UkJR0jzWQE1w7y",
+    productId: "prod_UkKsHBWSwV5bNY",
   },
 };
 
