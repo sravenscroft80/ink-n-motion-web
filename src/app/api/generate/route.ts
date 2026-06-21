@@ -78,8 +78,7 @@ export async function POST(request: Request) {
   if (!stylePack || !isStylePack(stylePack)) {
     return NextResponse.json(
       {
-        error:
-          'stylePack must be one of: "classic-comic", "manga", "noir".',
+        error: "stylePack must be a valid style id.",
       },
       { status: 400 },
     );

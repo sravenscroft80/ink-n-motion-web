@@ -1,4 +1,4 @@
-export type StylePack = "classic-comic" | "manga" | "noir";
+export type StylePack = string;
 
 export interface StylePackOption {
   id: StylePack;

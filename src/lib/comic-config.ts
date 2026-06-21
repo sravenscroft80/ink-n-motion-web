@@ -1,3 +1,4 @@
+import { STYLE_PACKS } from "./style-packs";
 import type { StylePack } from "./types";
 
 export type ComicStyle = StylePack;
@@ -6,25 +7,17 @@ export const MIN_PAGES = 1;
 export const MAX_PAGES = 1;
 
 export const COMIC_STYLES: Record<
-  ComicStyle,
+  string,
   { label: string; description: string }
-> = {
-  "classic-comic": {
-    label: "Classic Comic",
-    description: "Bold ink, halftone dots, pop-art colors",
-  },
-  manga: {
-    label: "Manga",
-    description: "Black & white ink with screentone shading",
-  },
-  noir: {
-    label: "Noir",
-    description: "High-contrast shadows, gritty thriller mood",
-  },
-};
+> = Object.fromEntries(
+  STYLE_PACKS.map((pack) => [
+    pack.id,
+    { label: pack.label, description: pack.description },
+  ]),
+);
 
 export function isComicStyle(value: string): value is ComicStyle {
-  return value in COMIC_STYLES;
+  return Object.prototype.hasOwnProperty.call(COMIC_STYLES, value);
 }
 
 export interface ComicPage {

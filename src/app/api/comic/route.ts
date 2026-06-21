@@ -94,8 +94,7 @@ export async function POST(request: Request) {
   if (!style || !isComicStyle(style)) {
     return NextResponse.json(
       {
-        error:
-          'style must be one of: "classic-comic", "manga", "noir".',
+        error: "style must be a valid style id.",
       },
       { status: 400 },
     );
