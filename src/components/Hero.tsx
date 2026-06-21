@@ -12,7 +12,7 @@ export function Hero({ onGetStarted }: HeroProps) {
       <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
         <div className="space-y-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/80 px-3 py-1 text-xs uppercase tracking-[0.2em] text-muted">
-            AI comic stills for tattoo artists & collectors
+            Movie scenes & motion for tattoo art
           </div>
 
           <div className="space-y-4">
@@ -22,8 +22,8 @@ export function Hero({ onGetStarted }: HeroProps) {
               come to life
             </h1>
             <p className="max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-              Upload a photo of any tattoo and transform it into a premium
-              comic-book-style still — Classic Comic, Manga, or Noir — in
+              Turn any tattoo into a multi-scene movie story — then bring scenes
+              to life with motion. Pick from 11 style packs and create in
               seconds.
             </p>
           </div>
@@ -45,9 +45,9 @@ export function Hero({ onGetStarted }: HeroProps) {
           </div>
 
           <div className="flex flex-wrap gap-6 pt-2 text-sm text-muted">
-            <span>✦ No video yet — comic stills only</span>
-            <span>✦ Style packs included</span>
-            <span>✦ Instant download</span>
+            <span>✦ Multi-scene stories</span>
+            <span>✦ 11 style packs</span>
+            <span>✦ Bring scenes to life</span>
           </div>
         </div>
 
@@ -80,7 +80,7 @@ export function Hero({ onGetStarted }: HeroProps) {
 
               <div className="absolute bottom-0 left-0 right-0 border-t border-white/10 bg-black/40 px-4 py-3 backdrop-blur-sm">
                 <div className="flex items-center justify-between text-xs text-muted">
-                  <span>Tattoo → Comic render</span>
+                  <span>Tattoo → Movie scene</span>
                   <span className="rounded-full bg-accent/20 px-2 py-0.5 text-accent">
                     Live preview
                   </span>

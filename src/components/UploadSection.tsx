@@ -22,6 +22,7 @@ interface UploadSectionProps {
   authLoading: boolean;
   tokens: number | null;
   tokenCost: number;
+  embedded?: boolean;
 }
 
 export function UploadSection({
@@ -37,6 +38,7 @@ export function UploadSection({
   authLoading,
   tokens,
   tokenCost,
+  embedded = false,
 }: UploadSectionProps) {
   const hasEnoughTokens = (tokens ?? 0) >= tokenCost;
   const canGenerate =
@@ -58,26 +60,11 @@ export function UploadSection({
     if (!hasEnoughTokens) {
       return "Not enough tokens";
     }
-    return formatGenerateLabel(tokenCost, "Generate comic still");
+    return formatGenerateLabel(tokenCost, "Generate scene still");
   }
 
-  return (
-    <section id="create" className="px-4 py-16 sm:px-6 sm:py-20">
-      <div className="mx-auto max-w-3xl">
-        <div className="mb-8 text-center">
-          <p className="text-xs uppercase tracking-[0.25em] text-accent">
-            Create
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-            Upload your tattoo
-          </h2>
-          <p className="mx-auto mt-3 max-w-lg text-sm text-muted">
-            Drop a clear photo, pick a style pack, and generate a comic still.
-            Each still costs {tokenCost} token{tokenCost === 1 ? "" : "s"}.
-          </p>
-        </div>
-
-        <div className="glass-panel space-y-6 rounded-3xl p-6 sm:p-8">
+  const panel = (
+    <div className="glass-panel space-y-6 rounded-3xl p-6 sm:p-8">
           <label
             htmlFor="tattoo-upload"
             className="group relative flex min-h-[220px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-border bg-surface/60 transition-colors hover:border-accent/50 hover:bg-surface"
@@ -195,7 +182,40 @@ export function UploadSection({
           >
             {buttonLabel()}
           </button>
+    </div>
+  );
+
+  if (embedded) {
+    return (
+      <div className="space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold text-white">Single scene still</h3>
+          <p className="mt-1 text-xs text-muted">
+            One styled frame — {tokenCost} token{tokenCost === 1 ? "" : "s"} per
+            generation.
+          </p>
         </div>
+        {panel}
+      </div>
+    );
+  }
+
+  return (
+    <section id="create" className="px-4 py-16 sm:px-6 sm:py-20">
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-8 text-center">
+          <p className="text-xs uppercase tracking-[0.25em] text-accent">
+            Create
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+            Upload your tattoo
+          </h2>
+          <p className="mx-auto mt-3 max-w-lg text-sm text-muted">
+            Drop a clear photo, pick a style pack, and generate a scene still.
+            Each still costs {tokenCost} token{tokenCost === 1 ? "" : "s"}.
+          </p>
+        </div>
+        {panel}
       </div>
     </section>
   );

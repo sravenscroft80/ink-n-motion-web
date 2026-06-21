@@ -40,7 +40,7 @@ export function Header() {
 
         <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
           <div className="hidden rounded-full border border-border px-3 py-1.5 text-sm text-muted lg:block">
-            Comic stills · v1
+            Movie Mode + Motion Studio
           </div>
 
           {showAuth && !authLoading && !user && (

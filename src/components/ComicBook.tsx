@@ -63,7 +63,7 @@ export default function ComicBook() {
 
     if ((tokens ?? 0) < tokenCost) {
       setError(
-        `Not enough tokens. You need ${tokenCost} token${tokenCost === 1 ? "" : "s"} for this comic.`,
+        `Not enough tokens. You need ${tokenCost} token${tokenCost === 1 ? "" : "s"} for this scene.`,
       );
       return;
     }
@@ -142,7 +142,7 @@ export default function ComicBook() {
     if (!hasEnoughTokens) {
       return "Not enough tokens";
     }
-    return formatGenerateLabel(tokenCost, "Generate comic");
+    return formatGenerateLabel(tokenCost, "Generate scene");
   }
 
   const canGenerate =
@@ -152,26 +152,15 @@ export default function ComicBook() {
     !loading;
 
   return (
-    <section id="comic-book" className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
-      <div className="text-center">
-        <p className="text-xs uppercase tracking-[0.25em] text-accent">Comic book</p>
-        <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-          Turn your tattoo into a comic book
-        </h2>
-        <p className="mt-3 text-sm text-muted sm:text-base">
-          Upload your tattoo, tell its story, and we&apos;ll illustrate it page
-          by page.
-        </p>
-      </div>
-
+    <div id="movie-mode" className="w-full">
       {!comic && (
-        <div className="glass-panel mt-8 space-y-5 rounded-3xl p-6 sm:p-8">
+        <div className="glass-panel space-y-5 rounded-3xl p-6 sm:p-8">
           <label
-            htmlFor="comic-upload"
+            htmlFor="movie-mode-upload"
             className="group relative flex min-h-[160px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-border bg-surface/60 transition-colors hover:border-accent/50"
           >
             <input
-              id="comic-upload"
+              id="movie-mode-upload"
               type="file"
               accept="image/*"
               onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
@@ -239,7 +228,7 @@ export default function ComicBook() {
           <TattooRenderModeToggle
             value={renderMode}
             onChange={setRenderMode}
-            id="comic-render-mode"
+            id="movie-mode-render-mode"
           />
 
           {!authLoading && !isLoggedIn && file && story.trim() && (
@@ -352,11 +341,11 @@ export default function ComicBook() {
               }}
               className="btn-secondary rounded-full px-5 py-2 text-sm"
             >
-              New comic
+              New story
             </button>
           </div>
         </div>
       )}
-    </section>
+    </div>
   );
 }

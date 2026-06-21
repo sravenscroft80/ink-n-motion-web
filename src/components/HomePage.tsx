@@ -9,6 +9,7 @@ import { LoadingState } from "@/components/LoadingState";
 import { ResultView } from "@/components/ResultView";
 import { SeeItStrip } from "@/components/SeeItStrip";
 import { UploadSection } from "@/components/UploadSection";
+import { MotionStudio } from "@/components/MotionStudio";
 import ComicBook from "@/components/ComicBook";
 import {
   tattooRenderModeToIsolate,
@@ -200,61 +201,113 @@ export function HomePage({
 
       <main className="flex-1">
         <Hero onGetStarted={scrollToCreate} />
-        <ComicBook />
         <SeeItStrip />
 
-        <UploadSection
-          selectedStyle={selectedStyle}
-          onStyleChange={setSelectedStyle}
-          renderMode={renderMode}
-          onRenderModeChange={setRenderMode}
-          previewUrl={previewUrl}
-          onFileSelect={handleFileSelect}
-          onGenerate={() => void handleGenerate()}
-          isGenerating={appState === "generating"}
-          isLoggedIn={Boolean(user)}
-          authLoading={authLoading && isAuthEnabled}
-          tokens={tokens}
-          tokenCost={tokenCost}
-        />
-
-        {appState === "generating" && <LoadingState styleLabel={styleLabel} />}
-
-        {appState === "result" && resultUrl && (
-          <ResultView
-            imageUrl={resultUrl}
-            styleLabel={styleLabel}
-            onReset={handleReset}
-          />
-        )}
-
-        {appState === "error" && errorMessage && (
-          <section className="px-4 pb-16 sm:px-6">
-            <div className="mx-auto max-w-3xl rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-sm text-red-100">
-              <p>{errorMessage}</p>
-              {errorMessage.includes("Log in") && (
-                <Link
-                  href="/login"
-                  className="mt-2 inline-block font-medium text-white underline"
-                >
-                  Log in to create
-                </Link>
-              )}
-              {errorMessage.includes("Not enough tokens") && (
-                <Link
-                  href="/pricing"
-                  className="mt-2 inline-block font-medium text-white underline"
-                >
-                  Buy tokens
-                </Link>
-              )}
+        <section id="create" className="px-4 py-16 sm:px-6 sm:py-20">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-10 text-center">
+              <p className="text-xs uppercase tracking-[0.25em] text-accent">
+                Creators
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+                Choose your mode
+              </h2>
+              <p className="mx-auto mt-3 max-w-2xl text-sm text-muted">
+                Build multi-scene movie stories or get ready to animate with
+                Motion Studio.
+              </p>
             </div>
-          </section>
-        )}
+
+            <div className="grid items-start gap-8 lg:grid-cols-2 lg:gap-6">
+              <div className="space-y-6">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.25em] text-accent">
+                    Movie Mode
+                  </p>
+                  <h3 className="mt-2 text-xl font-bold tracking-tight text-white sm:text-2xl">
+                    Turn your tattoo into a movie scene story
+                  </h3>
+                  <p className="mt-2 text-sm text-muted">
+                    Upload your tattoo, tell its story, and generate styled
+                    still scenes across 11 packs.
+                  </p>
+                </div>
+
+                <ComicBook />
+
+                <UploadSection
+                  embedded
+                  selectedStyle={selectedStyle}
+                  onStyleChange={setSelectedStyle}
+                  renderMode={renderMode}
+                  onRenderModeChange={setRenderMode}
+                  previewUrl={previewUrl}
+                  onFileSelect={handleFileSelect}
+                  onGenerate={() => void handleGenerate()}
+                  isGenerating={appState === "generating"}
+                  isLoggedIn={Boolean(user)}
+                  authLoading={authLoading && isAuthEnabled}
+                  tokens={tokens}
+                  tokenCost={tokenCost}
+                />
+
+                {appState === "generating" && (
+                  <LoadingState styleLabel={styleLabel} />
+                )}
+
+                {appState === "result" && resultUrl && (
+                  <ResultView
+                    imageUrl={resultUrl}
+                    styleLabel={styleLabel}
+                    onReset={handleReset}
+                  />
+                )}
+
+                {appState === "error" && errorMessage && (
+                  <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-sm text-red-100">
+                    <p>{errorMessage}</p>
+                    {errorMessage.includes("Log in") && (
+                      <Link
+                        href="/login"
+                        className="mt-2 inline-block font-medium text-white underline"
+                      >
+                        Log in to create
+                      </Link>
+                    )}
+                    {errorMessage.includes("Not enough tokens") && (
+                      <Link
+                        href="/pricing"
+                        className="mt-2 inline-block font-medium text-white underline"
+                      >
+                        Buy tokens
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.25em] text-accent-secondary">
+                    Motion Studio
+                  </p>
+                  <h3 className="mt-2 text-xl font-bold tracking-tight text-white sm:text-2xl">
+                    Bring your image to life with motion
+                  </h3>
+                  <p className="mt-2 text-sm text-muted">
+                    Turn a still into a short video — launching soon.
+                  </p>
+                </div>
+
+                <MotionStudio />
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
       <footer className="border-t border-border px-4 py-8 text-center text-xs text-muted sm:px-6">
-        <p>Ink-N-Motion · Comic stills v1 · Built for Vercel</p>
+        <p>Ink-N-Motion · Movie Mode + Motion Studio · Built for Vercel</p>
       </footer>
     </>
   );
