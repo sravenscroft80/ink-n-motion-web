@@ -5,6 +5,7 @@ interface PageProps {
   searchParams: Promise<{
     checkout?: string;
     credits?: string;
+    auth?: string;
   }>;
 }
 
@@ -22,6 +23,9 @@ export default async function Page({ searchParams }: PageProps) {
     initialToast = "Checkout cancelled.";
   } else if (params.checkout === "failed") {
     initialToast = "Checkout could not be verified. Please try again.";
+  } else if (params.auth === "confirmed") {
+    initialToast =
+      "Welcome! Your email is confirmed — 3 free tokens are in your account.";
   }
 
   return (
