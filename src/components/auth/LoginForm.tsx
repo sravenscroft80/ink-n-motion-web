@@ -14,6 +14,11 @@ export function LoginForm() {
   const { user, authLoading } = useAuth();
   const confirmed = searchParams.get("confirmed") === "1";
   const callbackError = searchParams.get("error");
+  const nextParam = searchParams.get("next");
+  const redirectTo =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? nextParam
+      : "/";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,9 +31,9 @@ export function LoginForm() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      router.replace("/");
+      router.replace(redirectTo);
     }
-  }, [authLoading, user, router]);
+  }, [authLoading, user, router, redirectTo]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,7 +52,7 @@ export function LoginForm() {
         return;
       }
 
-      router.push("/");
+      router.push(redirectTo);
       router.refresh();
     } catch {
       setError("Network error. Please try again.");

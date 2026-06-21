@@ -105,6 +105,36 @@ export interface Database {
         };
         Relationships: [];
       };
+      stripe_processed_events: {
+        Row: {
+          id: string;
+          event_type: string;
+          checkout_session_id: string | null;
+          user_id: string | null;
+          pack: string | null;
+          tokens_granted: number | null;
+          processed_at: string;
+        };
+        Insert: {
+          id: string;
+          event_type: string;
+          checkout_session_id?: string | null;
+          user_id?: string | null;
+          pack?: string | null;
+          tokens_granted?: number | null;
+          processed_at?: string;
+        };
+        Update: {
+          id?: string;
+          event_type?: string;
+          checkout_session_id?: string | null;
+          user_id?: string | null;
+          pack?: string | null;
+          tokens_granted?: number | null;
+          processed_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

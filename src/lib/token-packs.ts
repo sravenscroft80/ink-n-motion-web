@@ -1,59 +1,64 @@
-export const TOKEN_PACK_IDS = {
-  try_it: "try_it",
-  creator: "creator",
-  elite: "elite",
+export const TOKEN_PACK_KEYS = {
+  TRY_IT: "TRY_IT",
+  CREATOR: "CREATOR",
+  ELITE: "ELITE",
 } as const;
 
-export type TokenPackId = (typeof TOKEN_PACK_IDS)[keyof typeof TOKEN_PACK_IDS];
+export type TokenPackKey =
+  (typeof TOKEN_PACK_KEYS)[keyof typeof TOKEN_PACK_KEYS];
 
-export interface TokenPack {
-  id: TokenPackId;
+export interface TokenPackConfig {
+  key: TokenPackKey;
   name: string;
   priceUsd: number;
   tokens: number;
+  productId: string;
   badge?: string;
-  stripePriceEnvKey: string;
 }
 
-export const TOKEN_PACKS: TokenPack[] = [
-  {
-    id: TOKEN_PACK_IDS.try_it,
+/** Server-side source of truth for pack sizes and Stripe product IDs. */
+export const TOKEN_PACKS: Record<TokenPackKey, TokenPackConfig> = {
+  TRY_IT: {
+    key: TOKEN_PACK_KEYS.TRY_IT,
     name: "Try It",
     priceUsd: 4.99,
     tokens: 25,
-    stripePriceEnvKey: "STRIPE_PRICE_ID_TRY_IT",
+    productId: "prod_UkJQXZKRA8YBXx",
   },
-  {
-    id: TOKEN_PACK_IDS.creator,
+  CREATOR: {
+    key: TOKEN_PACK_KEYS.CREATOR,
     name: "Creator",
     priceUsd: 12.99,
     tokens: 80,
+    productId: "prod_UkJRUNw0hOE15R",
     badge: "Most Popular",
-    stripePriceEnvKey: "STRIPE_PRICE_ID_CREATOR",
   },
-  {
-    id: TOKEN_PACK_IDS.elite,
+  ELITE: {
+    key: TOKEN_PACK_KEYS.ELITE,
     name: "Elite",
     priceUsd: 24.99,
     tokens: 200,
-    stripePriceEnvKey: "STRIPE_PRICE_ID_ELITE",
+    productId: "prod_UkJR0jzWQE1w7y",
   },
+};
+
+export const TOKEN_PACK_LIST: TokenPackConfig[] = [
+  TOKEN_PACKS.TRY_IT,
+  TOKEN_PACKS.CREATOR,
+  TOKEN_PACKS.ELITE,
 ];
 
-export function getTokenPack(packId: string): TokenPack | undefined {
-  return TOKEN_PACKS.find((pack) => pack.id === packId);
+export function isTokenPackKey(value: string): value is TokenPackKey {
+  return value in TOKEN_PACKS;
 }
 
-export function getStripePriceIdForPack(packId: TokenPackId): string | null {
-  const pack = getTokenPack(packId);
-  if (!pack) {
-    return null;
+export function getTokenPackConfig(pack: string): TokenPackConfig | undefined {
+  if (!isTokenPackKey(pack)) {
+    return undefined;
   }
-
-  const priceId = process.env[pack.stripePriceEnvKey]?.trim();
-  return priceId || null;
+  return TOKEN_PACKS[pack];
 }
 
-export function isTokenPackId(value: string): value is TokenPackId {
-  return TOKEN_PACKS.some((pack) => pack.id === value);
+export function getTokenPackTokens(pack: TokenPackKey): number {
+  return TOKEN_PACKS[pack].tokens;
 }

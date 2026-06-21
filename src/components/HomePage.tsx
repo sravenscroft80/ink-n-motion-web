@@ -22,9 +22,13 @@ type AppState = "idle" | "generating" | "result" | "error";
 
 interface HomePageProps {
   initialToast?: string | null;
+  refreshTokensOnMount?: boolean;
 }
 
-export function HomePage({ initialToast = null }: HomePageProps) {
+export function HomePage({
+  initialToast = null,
+  refreshTokensOnMount = false,
+}: HomePageProps) {
   const { user, tokens, authLoading, refreshBalance, isAuthEnabled } = useAuth();
   const [selectedStyle, setSelectedStyle] = useState<StylePack>("classic-comic");
   const [renderMode, setRenderMode] = useState<TattooRenderMode>("on-skin");
@@ -49,6 +53,21 @@ export function HomePage({ initialToast = null }: HomePageProps) {
     const timer = window.setTimeout(() => setToast(null), 5000);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    if (!refreshTokensOnMount || !user) {
+      return;
+    }
+
+    void refreshBalance();
+    const retrySoon = window.setTimeout(() => void refreshBalance(), 2500);
+    const retryLater = window.setTimeout(() => void refreshBalance(), 6000);
+
+    return () => {
+      window.clearTimeout(retrySoon);
+      window.clearTimeout(retryLater);
+    };
+  }, [refreshTokensOnMount, user, refreshBalance]);
 
   const handleFileSelect = (file: File | null) => {
     if (previewUrl) {
