@@ -18,8 +18,18 @@ import {
 import { formatGenerateLabel } from "@/lib/format-tokens";
 import {
   getComicPageCost,
+  TOKEN_ACTIONS,
+  getTokenCost,
 } from "@/lib/token-costs";
 import type { GenerateErrorResponse } from "@/lib/types";
+
+const VIDEO_5S_COST = getTokenCost(TOKEN_ACTIONS.video_5s);
+
+type SceneVideoState = {
+  status: "idle" | "loading" | "done" | "error";
+  videoUrl?: string;
+  error?: string;
+};
 
 export default function ComicBook() {
   const { user, tokens, authLoading, refreshBalance, isAuthEnabled } = useAuth();
@@ -33,6 +43,9 @@ export default function ComicBook() {
   const [error, setError] = useState("");
   const [comic, setComic] = useState<Comic | null>(null);
   const [current, setCurrent] = useState(0);
+  const [sceneVideos, setSceneVideos] = useState<SceneVideoState[]>([]);
+  const [animatingScenes, setAnimatingScenes] = useState(false);
+  const [animatePromptDismissed, setAnimatePromptDismissed] = useState(false);
 
   const isolate = tattooRenderModeToIsolate(renderMode);
   const tokenCost = useMemo(
@@ -41,6 +54,14 @@ export default function ComicBook() {
   );
   const hasEnoughTokens = (tokens ?? 0) >= tokenCost;
   const isLoggedIn = Boolean(user);
+  const animateTotalCost = comic ? comic.pages.length * VIDEO_5S_COST : 0;
+  const hasEnoughForAnimate = (tokens ?? 0) >= animateTotalCost;
+  const currentSceneVideo = sceneVideos[current];
+  const showAnimatePrompt =
+    Boolean(comic) &&
+    !animatePromptDismissed &&
+    !animatingScenes &&
+    sceneVideos.every((scene) => scene.status === "idle");
 
   function handleFileChange(nextFile: File | null) {
     if (previewUrl) {
@@ -120,6 +141,10 @@ export default function ComicBook() {
 
       setComic(data.comic);
       setCurrent(0);
+      setSceneVideos(
+        data.comic.pages.map(() => ({ status: "idle" as const })),
+      );
+      setAnimatePromptDismissed(false);
       await refreshBalance();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Something went wrong");
@@ -127,6 +152,75 @@ export default function ComicBook() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function bringScenesToLife() {
+    if (!comic || !user) {
+      return;
+    }
+
+    if ((tokens ?? 0) < animateTotalCost) {
+      setError(
+        `Not enough tokens. You need ${animateTotalCost} tokens to animate all ${comic.pages.length} scenes.`,
+      );
+      return;
+    }
+
+    setError("");
+    setAnimatingScenes(true);
+    setAnimatePromptDismissed(true);
+    setSceneVideos(comic.pages.map(() => ({ status: "loading" as const })));
+
+    const tasks = comic.pages.map((page, index) =>
+      (async () => {
+        try {
+          const res = await fetch("/api/motion", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              imageUrl: page.image,
+              durationSeconds: 5,
+            }),
+          });
+
+          const data = (await res.json().catch(() => ({}))) as GenerateErrorResponse & {
+            videoUrl?: string;
+          };
+
+          if (!res.ok || !data.videoUrl) {
+            const refundNote = data.refunded ? " Tokens refunded." : "";
+            setSceneVideos((prev) => {
+              const next = [...prev];
+              next[index] = {
+                status: "error",
+                error: (data.error || "Animation failed") + refundNote,
+              };
+              return next;
+            });
+            return;
+          }
+
+          setSceneVideos((prev) => {
+            const next = [...prev];
+            next[index] = { status: "done", videoUrl: data.videoUrl };
+            return next;
+          });
+        } catch (e: unknown) {
+          setSceneVideos((prev) => {
+            const next = [...prev];
+            next[index] = {
+              status: "error",
+              error: e instanceof Error ? e.message : "Animation failed",
+            };
+            return next;
+          });
+        }
+      })(),
+    );
+
+    await Promise.allSettled(tasks);
+    await refreshBalance();
+    setAnimatingScenes(false);
   }
 
   function buttonLabel(): string {
@@ -293,16 +387,71 @@ export default function ComicBook() {
           </h3>
 
           <div className="glass-panel mt-4 overflow-hidden rounded-3xl">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={comic.pages[current].image}
-              alt={`Scene ${current + 1}`}
-              className="w-full object-contain"
-            />
+            {currentSceneVideo?.status === "done" && currentSceneVideo.videoUrl ? (
+              <video
+                src={currentSceneVideo.videoUrl}
+                controls
+                playsInline
+                className="w-full object-contain"
+              />
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={comic.pages[current].image}
+                alt={`Scene ${current + 1}`}
+                className="w-full object-contain"
+              />
+            )}
+            {currentSceneVideo?.status === "loading" && (
+              <p className="border-t border-border px-4 py-2 text-center text-xs text-muted">
+                Animating scene {current + 1}… (can take 1–3 minutes)
+              </p>
+            )}
+            {currentSceneVideo?.status === "error" && currentSceneVideo.error && (
+              <p className="border-t border-red-500/30 bg-red-500/10 px-4 py-2 text-center text-xs text-red-100">
+                {currentSceneVideo.error}
+              </p>
+            )}
             <p className="border-t border-border p-4 text-center text-sm text-muted sm:text-base">
               {comic.pages[current].caption}
             </p>
           </div>
+
+          {showAnimatePrompt && (
+            <div className="mt-4 rounded-2xl border border-accent/30 bg-accent/10 p-4 text-center">
+              <p className="text-sm text-white">
+                Bring these scenes to life? — animate each scene into a 5s clip (
+                {VIDEO_5S_COST} tokens each)
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                Total: {animateTotalCost} tokens · can take several minutes
+              </p>
+              {!hasEnoughForAnimate && (
+                <p className="mt-2 text-xs text-muted">
+                  Not enough tokens.{" "}
+                  <Link href="/pricing" className="text-accent hover:underline">
+                    Buy tokens
+                  </Link>
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => void bringScenesToLife()}
+                disabled={!hasEnoughForAnimate || animatingScenes}
+                className="btn-primary mt-3 rounded-full px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {formatGenerateLabel(animateTotalCost, "Animate all scenes")}
+              </button>
+            </div>
+          )}
+
+          {animatingScenes && (
+            <div className="mt-4 rounded-xl border border-border bg-surface/60 px-4 py-3 text-center text-sm text-muted">
+              Animating scenes in parallel…{" "}
+              {sceneVideos.filter((s) => s.status === "done").length} /{" "}
+              {comic.pages.length} complete
+            </div>
+          )}
 
           <div className="mt-4 flex items-center justify-between">
             <button
@@ -329,18 +478,30 @@ export default function ComicBook() {
           </div>
 
           <div className="mt-4 flex flex-wrap justify-center gap-3">
-            <a
-              href={comic.pages[current].image}
-              download
-              className="btn-primary rounded-full px-5 py-2 text-sm font-semibold text-white"
-            >
-              Download scene
-            </a>
+            {currentSceneVideo?.status === "done" && currentSceneVideo.videoUrl ? (
+              <a
+                href={currentSceneVideo.videoUrl}
+                download
+                className="btn-primary rounded-full px-5 py-2 text-sm font-semibold text-white"
+              >
+                Download clip
+              </a>
+            ) : (
+              <a
+                href={comic.pages[current].image}
+                download
+                className="btn-primary rounded-full px-5 py-2 text-sm font-semibold text-white"
+              >
+                Download scene
+              </a>
+            )}
             <button
               type="button"
               onClick={() => {
                 setComic(null);
                 setCurrent(0);
+                setSceneVideos([]);
+                setAnimatePromptDismissed(false);
               }}
               className="btn-secondary rounded-full px-5 py-2 text-sm"
             >

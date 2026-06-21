@@ -35,8 +35,9 @@ async function pollPrediction(
   client: Replicate,
   predictionId: string,
   stage: GenerationStage,
+  timeoutMs: number = GENERATION_TIMEOUT_MS,
 ): Promise<unknown> {
-  const deadline = Date.now() + GENERATION_TIMEOUT_MS;
+  const deadline = Date.now() + timeoutMs;
 
   while (Date.now() < deadline) {
     const prediction = await client.predictions.get(predictionId);
@@ -56,7 +57,11 @@ async function pollPrediction(
     await sleep(POLL_INTERVAL_MS);
   }
 
-  throw new GenerationError("Generation timed out after 60 seconds", stage);
+  const timeoutSeconds = Math.round(timeoutMs / 1000);
+  throw new GenerationError(
+    `Generation timed out after ${timeoutSeconds} seconds`,
+    stage,
+  );
 }
 
 export function extractOutputUrl(output: unknown): string | null {
@@ -89,6 +94,7 @@ export async function runReplicateWithTarget(
   target: { model?: string; version?: string },
   input: Record<string, unknown>,
   stage: GenerationStage,
+  timeoutMs?: number,
 ): Promise<string> {
   const client = getReplicateClient();
 
@@ -115,7 +121,12 @@ export async function runReplicateWithTarget(
     );
   }
 
-  const output = await pollPrediction(client, prediction.id, stage);
+  const output = await pollPrediction(
+    client,
+    prediction.id,
+    stage,
+    timeoutMs,
+  );
   const outputUrl = extractOutputUrl(output);
 
   if (!outputUrl) {
