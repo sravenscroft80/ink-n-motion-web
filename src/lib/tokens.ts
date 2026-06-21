@@ -23,12 +23,16 @@ export interface TokenLedgerEntry {
 
 export class InsufficientTokensError extends Error {
   readonly code = "insufficient_tokens" as const;
+  readonly required: number;
+  readonly available: number;
 
   constructor(required: number, available: number) {
     super(
       `Insufficient tokens: need ${required}, have ${available} spendable.`,
     );
     this.name = "InsufficientTokensError";
+    this.required = required;
+    this.available = available;
   }
 }
 
@@ -129,17 +133,13 @@ export interface SpendTokensResult {
 export async function spendTokens(
   userId: string,
   action: TokenAction,
+  costOverride?: number,
 ): Promise<SpendTokensResult> {
-  const cost = getTokenCost(action);
+  const cost = costOverride ?? getTokenCost(action);
 
   if (cost <= 0) {
     const balanceAfter = await getSpendableBalance(userId);
     return { spendBatchId: crypto.randomUUID(), cost: 0, balanceAfter };
-  }
-
-  const balanceBefore = await getSpendableBalance(userId);
-  if (balanceBefore < cost) {
-    throw new InsufficientTokensError(cost, balanceBefore);
   }
 
   const supabase = createAdminClient();
@@ -150,6 +150,10 @@ export async function spendTokens(
   });
 
   if (error) {
+    if (error.message?.includes("insufficient_tokens")) {
+      const balance = await getSpendableBalance(userId);
+      throw new InsufficientTokensError(cost, balance);
+    }
     mapRpcError(error);
   }
 

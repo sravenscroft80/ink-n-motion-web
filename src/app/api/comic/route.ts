@@ -5,13 +5,22 @@ import {
   MIN_PAGES,
 } from "@/lib/comic-config";
 import { generateComic } from "@/lib/comic-generate";
-import { addCredits, deductCredits, getCredits } from "@/lib/credits";
 import {
   getGenerationErrorResponse,
   logGenerationFailure,
 } from "@/lib/generation-errors";
+import {
+  handleInsufficientTokens,
+  requireAuthenticatedUser,
+  tokensRemainingPayload,
+} from "@/lib/generation-guard";
 import { parseIsolateFlag } from "@/lib/parse-isolate";
 import { isReplicateConfigured } from "@/lib/replicate";
+import {
+  getComicPageAction,
+  getComicPageCost,
+} from "@/lib/token-costs";
+import { refundTokens, spendTokens } from "@/lib/tokens";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -40,6 +49,12 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+
+  const auth = await requireAuthenticatedUser();
+  if (auth instanceof NextResponse) {
+    return auth;
+  }
+  const { userId } = auth;
 
   let body: ComicRequestBody;
 
@@ -98,14 +113,20 @@ export async function POST(request: Request) {
     );
   }
 
-  const hasCredits = await deductCredits(pageCount);
-  if (!hasCredits) {
-    return NextResponse.json(
-      {
-        error: `Not enough credits. This comic requires ${pageCount} credit${pageCount === 1 ? "" : "s"}.`,
-      },
-      { status: 402 },
-    );
+  const action = getComicPageAction(isolate);
+  const tokenCost = getComicPageCost(isolate) * pageCount;
+
+  let spendBatchId: string;
+
+  try {
+    const spend = await spendTokens(userId, action, tokenCost);
+    spendBatchId = spend.spendBatchId;
+  } catch (error) {
+    const insufficient = await handleInsufficientTokens(error, tokenCost);
+    if (insufficient) {
+      return insufficient;
+    }
+    throw error;
   }
 
   try {
@@ -117,15 +138,29 @@ export async function POST(request: Request) {
       isolate,
     );
 
-    const creditsRemaining = await getCredits();
-
-    return NextResponse.json({ comic, creditsRemaining });
+    return NextResponse.json({
+      comic,
+      ...(await tokensRemainingPayload(userId)),
+    });
   } catch (error) {
     logGenerationFailure("comic", error);
-    await addCredits(pageCount);
+
+    try {
+      await refundTokens(userId, spendBatchId, action);
+    } catch (refundError) {
+      console.error("Comic token refund failed:", refundError);
+    }
 
     const { message, stage, status } = getGenerationErrorResponse(error);
 
-    return NextResponse.json({ error: message, stage }, { status });
+    return NextResponse.json(
+      {
+        error: message,
+        stage,
+        refunded: true,
+        ...(await tokensRemainingPayload(userId)),
+      },
+      { status },
+    );
   }
 }

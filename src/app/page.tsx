@@ -1,24 +1,19 @@
 import { HomePage } from "@/components/HomePage";
-import { getCredits } from "@/lib/credits";
 
 interface PageProps {
   searchParams: Promise<{
     checkout?: string;
-    credits?: string;
     auth?: string;
   }>;
 }
 
 export default async function Page({ searchParams }: PageProps) {
   const params = await searchParams;
-  const initialCredits = await getCredits();
 
   let initialToast: string | null = null;
 
   if (params.checkout === "success") {
-    initialToast = params.credits
-      ? `Checkout complete — ${params.credits} credits added.`
-      : "Checkout complete — credits added.";
+    initialToast = "Checkout complete — token packs arrive in the next release.";
   } else if (params.checkout === "cancelled") {
     initialToast = "Checkout cancelled.";
   } else if (params.checkout === "failed") {
@@ -28,7 +23,5 @@ export default async function Page({ searchParams }: PageProps) {
       "Welcome! Your email is confirmed — 3 free tokens are in your account.";
   }
 
-  return (
-    <HomePage initialCredits={initialCredits} initialToast={initialToast} />
-  );
+  return <HomePage initialToast={initialToast} />;
 }

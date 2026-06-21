@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/components/AuthProvider";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { LoadingState } from "@/components/LoadingState";
@@ -13,20 +15,17 @@ import {
   type TattooRenderMode,
 } from "@/components/TattooRenderModeToggle";
 import { getStylePack } from "@/lib/style-packs";
+import { getStyleStillCost } from "@/lib/token-costs";
 import type { GenerateErrorResponse, GenerateResponse, StylePack } from "@/lib/types";
 
 type AppState = "idle" | "generating" | "result" | "error";
 
 interface HomePageProps {
-  initialCredits: number;
   initialToast?: string | null;
 }
 
-export function HomePage({
-  initialCredits,
-  initialToast = null,
-}: HomePageProps) {
-  const [credits, setCredits] = useState(initialCredits);
+export function HomePage({ initialToast = null }: HomePageProps) {
+  const { user, tokens, authLoading, refreshBalance, isAuthEnabled } = useAuth();
   const [selectedStyle, setSelectedStyle] = useState<StylePack>("classic-comic");
   const [renderMode, setRenderMode] = useState<TattooRenderMode>("on-skin");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -34,8 +33,9 @@ export function HomePage({
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [appState, setAppState] = useState<AppState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [toast, setToast] = useState<string | null>(initialToast);
+
+  const tokenCost = getStyleStillCost();
 
   const styleLabel = useMemo(
     () => getStylePack(selectedStyle)?.label ?? "Classic Comic",
@@ -63,7 +63,21 @@ export function HomePage({
   };
 
   const handleGenerate = async () => {
-    if (!selectedFile || credits <= 0) {
+    if (!selectedFile) {
+      return;
+    }
+
+    if (!user) {
+      setErrorMessage("Log in to create — sign up free and get 3 tokens.");
+      setAppState("error");
+      return;
+    }
+
+    if ((tokens ?? 0) < tokenCost) {
+      setErrorMessage(
+        `Not enough tokens. You need ${tokenCost} token${tokenCost === 1 ? "" : "s"} for this action.`,
+      );
+      setAppState("error");
       return;
     }
 
@@ -103,59 +117,44 @@ export function HomePage({
         }),
       });
 
-      const generateData = (await generateResponse.json()) as
-        | GenerateResponse
-        | GenerateErrorResponse;
+      const generateData = (await generateResponse.json()) as GenerateResponse &
+        GenerateErrorResponse;
+
+      if (generateResponse.status === 401) {
+        setErrorMessage(generateData.error || "Log in to create.");
+        setAppState("error");
+        return;
+      }
+
+      if (generateResponse.status === 402) {
+        setErrorMessage(generateData.error || "Not enough tokens.");
+        setAppState("error");
+        await refreshBalance();
+        return;
+      }
 
       if (!generateResponse.ok || !("outputUrl" in generateData)) {
         const message =
           "error" in generateData
             ? generateData.error
             : "Generation failed. Please try again.";
-        setErrorMessage(message);
+        const refundNote =
+          "refunded" in generateData && generateData.refunded
+            ? " Your tokens were refunded."
+            : "";
+        setErrorMessage(`${message}${refundNote}`);
         setAppState("error");
-        const creditsResponse = await fetch("/api/credits");
-        if (creditsResponse.ok) {
-          const creditsData = (await creditsResponse.json()) as { credits: number };
-          setCredits(creditsData.credits);
-        }
+        await refreshBalance();
         return;
       }
 
       setResultUrl(generateData.outputUrl);
-      setCredits(generateData.creditsRemaining);
       setAppState("result");
+      await refreshBalance();
     } catch {
       setErrorMessage("Network error. Check your connection and try again.");
       setAppState("error");
-      const creditsResponse = await fetch("/api/credits");
-      if (creditsResponse.ok) {
-        const creditsData = (await creditsResponse.json()) as { credits: number };
-        setCredits(creditsData.credits);
-      }
-    }
-  };
-
-  const handleBuyCredits = async () => {
-    setIsCheckoutLoading(true);
-    try {
-      const response = await fetch("/api/checkout", { method: "POST" });
-      const data = (await response.json()) as { url?: string; mock?: boolean };
-
-      if (!response.ok || !data.url) {
-        setToast("Unable to start checkout. Please try again.");
-        return;
-      }
-
-      if (data.mock) {
-        setToast("Stripe not configured — running mock checkout.");
-      }
-
-      window.location.href = data.url;
-    } catch {
-      setToast("Unable to start checkout. Please try again.");
-    } finally {
-      setIsCheckoutLoading(false);
+      await refreshBalance();
     }
   };
 
@@ -172,11 +171,7 @@ export function HomePage({
 
   return (
     <>
-      <Header
-        credits={credits}
-        onBuyCredits={() => void handleBuyCredits()}
-        isCheckoutLoading={isCheckoutLoading}
-      />
+      <Header />
 
       {toast && (
         <div className="fixed right-4 top-20 z-50 max-w-sm rounded-2xl border border-border bg-surface-elevated px-4 py-3 text-sm text-white shadow-xl">
@@ -186,7 +181,7 @@ export function HomePage({
 
       <main className="flex-1">
         <Hero onGetStarted={scrollToCreate} />
-        <ComicBook onCreditsChange={setCredits} />
+        <ComicBook />
         <SeeItStrip />
 
         <UploadSection
@@ -198,7 +193,10 @@ export function HomePage({
           onFileSelect={handleFileSelect}
           onGenerate={() => void handleGenerate()}
           isGenerating={appState === "generating"}
-          credits={credits}
+          isLoggedIn={Boolean(user)}
+          authLoading={authLoading && isAuthEnabled}
+          tokens={tokens}
+          tokenCost={tokenCost}
         />
 
         {appState === "generating" && <LoadingState styleLabel={styleLabel} />}
@@ -214,7 +212,23 @@ export function HomePage({
         {appState === "error" && errorMessage && (
           <section className="px-4 pb-16 sm:px-6">
             <div className="mx-auto max-w-3xl rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-sm text-red-100">
-              {errorMessage}
+              <p>{errorMessage}</p>
+              {errorMessage.includes("Log in") && (
+                <Link
+                  href="/login"
+                  className="mt-2 inline-block font-medium text-white underline"
+                >
+                  Log in to create
+                </Link>
+              )}
+              {errorMessage.includes("Not enough tokens") && (
+                <Link
+                  href="/pricing"
+                  className="mt-2 inline-block font-medium text-white underline"
+                >
+                  Buy tokens
+                </Link>
+              )}
             </div>
           </section>
         )}

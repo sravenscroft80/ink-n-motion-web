@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
-import { deductCredit, getCredits } from "@/lib/credits";
 import {
   getGenerationErrorResponse,
   logGenerationFailure,
 } from "@/lib/generation-errors";
+import {
+  handleInsufficientTokens,
+  requireAuthenticatedUser,
+  tokensRemainingPayload,
+} from "@/lib/generation-guard";
 import { generateComicRender, isReplicateConfigured } from "@/lib/replicate";
 import { parseIsolateFlag } from "@/lib/parse-isolate";
 import { isStylePack } from "@/lib/style-packs";
+import { getStyleStillAction, getStyleStillCost } from "@/lib/token-costs";
+import { refundTokens, spendTokens } from "@/lib/tokens";
 import type { StylePack } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -34,6 +40,12 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+
+  const auth = await requireAuthenticatedUser();
+  if (auth instanceof NextResponse) {
+    return auth;
+  }
+  const { userId } = auth;
 
   let body: GenerateRequestBody;
 
@@ -73,28 +85,50 @@ export async function POST(request: Request) {
     );
   }
 
-  const hasCredit = await deductCredit();
-  if (!hasCredit) {
-    return NextResponse.json(
-      { error: "You are out of credits. Purchase more to continue generating." },
-      { status: 402 },
-    );
+  const action = getStyleStillAction();
+  const tokenCost = getStyleStillCost();
+
+  let spendBatchId: string;
+
+  try {
+    const spend = await spendTokens(userId, action, tokenCost);
+    spendBatchId = spend.spendBatchId;
+  } catch (error) {
+    const insufficient = await handleInsufficientTokens(error, tokenCost);
+    if (insufficient) {
+      return insufficient;
+    }
+    throw error;
   }
 
   try {
     const outputUrl = await generateComicRender(imageUrl, stylePack as StylePack, {
       isolate,
     });
-    const creditsRemaining = await getCredits();
 
-    return NextResponse.json({ outputUrl, creditsRemaining });
+    return NextResponse.json({
+      outputUrl,
+      ...(await tokensRemainingPayload(userId)),
+    });
   } catch (error) {
     logGenerationFailure("generate", error);
-    const { addCredits } = await import("@/lib/credits");
-    await addCredits(1);
+
+    try {
+      await refundTokens(userId, spendBatchId, action);
+    } catch (refundError) {
+      console.error("Generate token refund failed:", refundError);
+    }
 
     const { message, stage, status } = getGenerationErrorResponse(error);
 
-    return NextResponse.json({ error: message, stage }, { status });
+    return NextResponse.json(
+      {
+        error: message,
+        stage,
+        refunded: true,
+        ...(await tokensRemainingPayload(userId)),
+      },
+      { status },
+    );
   }
 }

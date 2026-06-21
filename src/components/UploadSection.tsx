@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { STYLE_PACKS } from "@/lib/style-packs";
 import type { StylePack } from "@/lib/types";
+import { formatGenerateLabel } from "@/lib/format-tokens";
 import {
   TattooRenderModeToggle,
   type TattooRenderMode,
@@ -16,7 +18,10 @@ interface UploadSectionProps {
   onFileSelect: (file: File | null) => void;
   onGenerate: () => void;
   isGenerating: boolean;
-  credits: number;
+  isLoggedIn: boolean;
+  authLoading: boolean;
+  tokens: number | null;
+  tokenCost: number;
 }
 
 export function UploadSection({
@@ -28,9 +33,33 @@ export function UploadSection({
   onFileSelect,
   onGenerate,
   isGenerating,
-  credits,
+  isLoggedIn,
+  authLoading,
+  tokens,
+  tokenCost,
 }: UploadSectionProps) {
-  const canGenerate = Boolean(previewUrl) && credits > 0 && !isGenerating;
+  const hasEnoughTokens = (tokens ?? 0) >= tokenCost;
+  const canGenerate =
+    Boolean(previewUrl) && isLoggedIn && hasEnoughTokens && !isGenerating;
+
+  function buttonLabel(): string {
+    if (isGenerating) {
+      return "Generating…";
+    }
+    if (authLoading) {
+      return "Loading account…";
+    }
+    if (!previewUrl) {
+      return formatGenerateLabel(tokenCost, "Generate");
+    }
+    if (!isLoggedIn) {
+      return "Log in to create";
+    }
+    if (!hasEnoughTokens) {
+      return "Not enough tokens";
+    }
+    return formatGenerateLabel(tokenCost, "Generate comic still");
+  }
 
   return (
     <section id="create" className="px-4 py-16 sm:px-6 sm:py-20">
@@ -44,7 +73,7 @@ export function UploadSection({
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-sm text-muted">
             Drop a clear photo, pick a style pack, and generate a comic still.
-            Each generation uses one credit.
+            Each still costs {tokenCost} token{tokenCost === 1 ? "" : "s"}.
           </p>
         </div>
 
@@ -136,25 +165,36 @@ export function UploadSection({
             id="still-render-mode"
           />
 
+          {!authLoading && !isLoggedIn && previewUrl && (
+            <p className="text-center text-xs text-muted">
+              <Link href="/login" className="text-accent hover:underline">
+                Log in
+              </Link>{" "}
+              or{" "}
+              <Link href="/signup" className="text-accent hover:underline">
+                sign up free
+              </Link>{" "}
+              to generate ({tokenCost} token{tokenCost === 1 ? "" : "s"}).
+            </p>
+          )}
+
+          {isLoggedIn && !hasEnoughTokens && (
+            <p className="text-center text-xs text-muted">
+              Not enough tokens.{" "}
+              <Link href="/pricing" className="text-accent hover:underline">
+                Buy tokens
+              </Link>
+            </p>
+          )}
+
           <button
             type="button"
             onClick={onGenerate}
-            disabled={!canGenerate}
-            className="btn-primary w-full rounded-xl px-6 py-3.5 text-sm font-semibold text-white"
+            disabled={!canGenerate && !(previewUrl && !isLoggedIn)}
+            className="btn-primary w-full rounded-xl px-6 py-3.5 text-sm font-semibold text-white disabled:opacity-50"
           >
-            {isGenerating
-              ? "Generating…"
-              : credits <= 0
-                ? "No credits — buy more to generate"
-                : "Generate comic still"}
+            {buttonLabel()}
           </button>
-
-          {credits <= 0 && (
-            <p className="text-center text-xs text-muted">
-              You need at least one credit to generate. Use &quot;Buy
-              credits&quot; in the header.
-            </p>
-          )}
         </div>
       </div>
     </section>

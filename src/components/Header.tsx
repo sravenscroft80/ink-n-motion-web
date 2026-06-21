@@ -3,12 +3,6 @@
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 
-interface HeaderProps {
-  credits: number;
-  onBuyCredits: () => void;
-  isCheckoutLoading?: boolean;
-}
-
 function formatEmail(email: string): string {
   const [local, domain] = email.split("@");
   if (!domain) {
@@ -20,11 +14,7 @@ function formatEmail(email: string): string {
   return `${local.slice(0, 12)}…@${domain}`;
 }
 
-export function Header({
-  credits,
-  onBuyCredits,
-  isCheckoutLoading = false,
-}: HeaderProps) {
+export function Header() {
   const {
     user,
     tokens,
@@ -87,6 +77,12 @@ export function Header({
                     : (tokens ?? 0)}
                 </span>
               </div>
+              <Link
+                href="/pricing"
+                className="btn-secondary rounded-full px-4 py-2 text-sm font-medium text-white"
+              >
+                Buy tokens
+              </Link>
               <button
                 type="button"
                 onClick={() => void signOut()}
@@ -96,20 +92,6 @@ export function Header({
               </button>
             </>
           )}
-
-          <div className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-sm">
-            <span className="text-muted">Credits</span>
-            <span className="font-semibold text-white">{credits}</span>
-          </div>
-
-          <button
-            type="button"
-            onClick={onBuyCredits}
-            disabled={isCheckoutLoading}
-            className="btn-secondary rounded-full px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-          >
-            {isCheckoutLoading ? "Loading…" : "Buy credits"}
-          </button>
         </div>
       </div>
     </header>

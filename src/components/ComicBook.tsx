@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { useAuth } from "@/components/AuthProvider";
 import {
   TattooRenderModeToggle,
   tattooRenderModeToIsolate,
@@ -13,12 +15,14 @@ import {
   MAX_PAGES,
   MIN_PAGES,
 } from "@/lib/comic-config";
+import { formatGenerateLabel } from "@/lib/format-tokens";
+import {
+  getComicPageCost,
+} from "@/lib/token-costs";
+import type { GenerateErrorResponse } from "@/lib/types";
 
-interface ComicBookProps {
-  onCreditsChange?: (credits: number) => void;
-}
-
-export default function ComicBook({ onCreditsChange }: ComicBookProps) {
+export default function ComicBook() {
+  const { user, tokens, authLoading, refreshBalance, isAuthEnabled } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [story, setStory] = useState("");
@@ -29,6 +33,14 @@ export default function ComicBook({ onCreditsChange }: ComicBookProps) {
   const [error, setError] = useState("");
   const [comic, setComic] = useState<Comic | null>(null);
   const [current, setCurrent] = useState(0);
+
+  const isolate = tattooRenderModeToIsolate(renderMode);
+  const tokenCost = useMemo(
+    () => getComicPageCost(isolate) * pages,
+    [isolate, pages],
+  );
+  const hasEnoughTokens = (tokens ?? 0) >= tokenCost;
+  const isLoggedIn = Boolean(user);
 
   function handleFileChange(nextFile: File | null) {
     if (previewUrl) {
@@ -41,6 +53,18 @@ export default function ComicBook({ onCreditsChange }: ComicBookProps) {
   async function generate() {
     if (!file || !story.trim()) {
       setError("Add a tattoo photo and tell us the story.");
+      return;
+    }
+
+    if (!user) {
+      setError("Log in to create — sign up free and get 3 tokens.");
+      return;
+    }
+
+    if ((tokens ?? 0) < tokenCost) {
+      setError(
+        `Not enough tokens. You need ${tokenCost} token${tokenCost === 1 ? "" : "s"} for this comic.`,
+      );
       return;
     }
 
@@ -68,32 +92,64 @@ export default function ComicBook({ onCreditsChange }: ComicBookProps) {
           story,
           style,
           pages,
-          isolate: tattooRenderModeToIsolate(renderMode),
+          isolate,
         }),
       });
 
-      if (!res.ok) {
-        const e = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(e.error || "Generation failed");
+      const data = (await res.json().catch(() => ({}))) as GenerateErrorResponse & {
+        comic?: Comic;
+      };
+
+      if (res.status === 401) {
+        setError(data.error || "Log in to create.");
+        return;
       }
 
-      const data = (await res.json()) as {
-        comic: Comic;
-        creditsRemaining?: number;
-      };
+      if (res.status === 402) {
+        setError(data.error || "Not enough tokens.");
+        await refreshBalance();
+        return;
+      }
+
+      if (!res.ok || !data.comic) {
+        const refundNote = data.refunded ? " Your tokens were refunded." : "";
+        setError((data.error || "Generation failed") + refundNote);
+        await refreshBalance();
+        return;
+      }
 
       setComic(data.comic);
       setCurrent(0);
-
-      if (typeof data.creditsRemaining === "number") {
-        onCreditsChange?.(data.creditsRemaining);
-      }
+      await refreshBalance();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Something went wrong");
+      await refreshBalance();
     } finally {
       setLoading(false);
     }
   }
+
+  function buttonLabel(): string {
+    if (loading) {
+      return "Illustrating your story…";
+    }
+    if (authLoading && isAuthEnabled) {
+      return "Loading account…";
+    }
+    if (!isLoggedIn) {
+      return "Log in to create";
+    }
+    if (!hasEnoughTokens) {
+      return "Not enough tokens";
+    }
+    return formatGenerateLabel(tokenCost, "Generate comic");
+  }
+
+  const canGenerate =
+    Boolean(file && story.trim()) &&
+    isLoggedIn &&
+    hasEnoughTokens &&
+    !loading;
 
   return (
     <section id="comic-book" className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
@@ -186,21 +242,54 @@ export default function ComicBook({ onCreditsChange }: ComicBookProps) {
             id="comic-render-mode"
           />
 
-          {error && (
-            <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">
-              {error}
+          {!authLoading && !isLoggedIn && file && story.trim() && (
+            <p className="text-center text-xs text-muted">
+              <Link href="/login" className="text-accent hover:underline">
+                Log in
+              </Link>{" "}
+              to generate ({tokenCost} token{tokenCost === 1 ? "" : "s"}
+              {isolate ? ", isolate mode" : ""}).
             </p>
+          )}
+
+          {isLoggedIn && !hasEnoughTokens && (
+            <p className="text-center text-xs text-muted">
+              Not enough tokens.{" "}
+              <Link href="/pricing" className="text-accent hover:underline">
+                Buy tokens
+              </Link>
+            </p>
+          )}
+
+          {error && (
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+              <p>{error}</p>
+              {error.includes("Log in") && (
+                <Link
+                  href="/login"
+                  className="mt-2 inline-block font-medium text-white underline"
+                >
+                  Log in to create
+                </Link>
+              )}
+              {error.includes("Not enough tokens") && (
+                <Link
+                  href="/pricing"
+                  className="mt-2 inline-block font-medium text-white underline"
+                >
+                  Buy tokens
+                </Link>
+              )}
+            </div>
           )}
 
           <button
             type="button"
             onClick={() => void generate()}
-            disabled={loading}
+            disabled={!canGenerate && !(file && story.trim() && !isLoggedIn)}
             className="btn-primary w-full rounded-full py-3.5 text-sm font-semibold text-white disabled:opacity-50"
           >
-            {loading
-              ? "Illustrating your story…"
-              : `Generate comic (${pages} credit${pages === 1 ? "" : "s"})`}
+            {buttonLabel()}
           </button>
         </div>
       )}

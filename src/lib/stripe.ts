@@ -1,5 +1,6 @@
 import Stripe from "stripe";
-import { CHECKOUT_CREDIT_PACK } from "./credits";
+
+const LEGACY_CHECKOUT_TOKENS = 10;
 
 export function isStripeConfigured(): boolean {
   return Boolean(
@@ -47,8 +48,8 @@ export async function createCheckoutSession(
     success_url: `${baseUrl}/api/checkout/complete?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${baseUrl}/?checkout=cancelled`,
     metadata: {
-      credits: String(CHECKOUT_CREDIT_PACK),
-      product: "ink-n-motion-credits",
+      tokens: String(LEGACY_CHECKOUT_TOKENS),
+      product: "ink-n-motion-tokens",
     },
   });
 
@@ -68,10 +69,13 @@ export async function verifyCheckoutSession(
   }
 
   const session = await stripe.checkout.sessions.retrieve(sessionId);
-  const credits = Number.parseInt(session.metadata?.credits ?? "0", 10);
+  const tokens = Number.parseInt(
+    session.metadata?.tokens ?? session.metadata?.credits ?? "0",
+    10,
+  );
 
   return {
     paid: session.payment_status === "paid",
-    credits: Number.isFinite(credits) ? credits : CHECKOUT_CREDIT_PACK,
+    credits: Number.isFinite(tokens) ? tokens : LEGACY_CHECKOUT_TOKENS,
   };
 }

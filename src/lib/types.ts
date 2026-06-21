@@ -15,12 +15,25 @@ export interface GenerateRequest {
 
 export interface GenerateResponse {
   outputUrl: string;
-  creditsRemaining: number;
+  tokensRemaining: number;
 }
 
 export interface GenerateErrorResponse {
   error: string;
   stage?: string;
+  code?: string;
+  cost?: number;
+  balance?: number;
+  tokensRemaining?: number;
+  refunded?: boolean;
+}
+
+export interface ComicResponse {
+  comic: {
+    title: string;
+    pages: Array<{ caption: string; image: string }>;
+  };
+  tokensRemaining: number;
 }
 
 export interface UploadResponse {
@@ -29,10 +42,6 @@ export interface UploadResponse {
 
 export interface UploadErrorResponse {
   error: string;
-}
-
-export interface CreditsResponse {
-  credits: number;
 }
 
 export interface CheckoutResponse {
