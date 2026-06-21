@@ -11,19 +11,24 @@ export async function generateComic(
   isolate: boolean,
 ): Promise<Comic> {
   const { title, captions } = buildComicScript(story, pageCount);
-  const pages: Comic["pages"] = [];
 
-  for (let index = 0; index < captions.length; index += 1) {
-    const caption = captions[index];
-    const scenePrompt = isolate
-      ? `story panel ${index + 1}: ${caption}, tattoo design only on white background`
-      : `page ${index + 1} of ${pageCount}, narrative scene: ${caption}`;
-    const image = await generateComicRender(imageUrl, style as StylePack, {
-      scenePrompt,
-      isolate,
-    });
-    pages.push({ caption, image });
-  }
+  const images = await Promise.all(
+    captions.map((caption, index) => {
+      const scenePrompt = isolate
+        ? `story panel ${index + 1}: ${caption}, tattoo design only on white background`
+        : `page ${index + 1} of ${pageCount}, narrative scene: ${caption}`;
+
+      return generateComicRender(imageUrl, style as StylePack, {
+        scenePrompt,
+        isolate,
+      });
+    }),
+  );
+
+  const pages = captions.map((caption, index) => ({
+    caption,
+    image: images[index],
+  }));
 
   return { title, pages };
 }

@@ -9,11 +9,11 @@ import {
   type TattooRenderMode,
 } from "@/components/TattooRenderModeToggle";
 import {
+  ALLOWED_PAGE_COUNTS,
   COMIC_STYLES,
+  DEFAULT_PAGES,
   type Comic,
   type ComicStyle,
-  MAX_PAGES,
-  MIN_PAGES,
 } from "@/lib/comic-config";
 import { formatGenerateLabel } from "@/lib/format-tokens";
 import {
@@ -27,7 +27,7 @@ export default function ComicBook() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [story, setStory] = useState("");
   const [style, setStyle] = useState<ComicStyle>("classic-comic");
-  const [pages, setPages] = useState(MIN_PAGES);
+  const [pages, setPages] = useState(DEFAULT_PAGES);
   const [renderMode, setRenderMode] = useState<TattooRenderMode>("on-skin");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -63,7 +63,7 @@ export default function ComicBook() {
 
     if ((tokens ?? 0) < tokenCost) {
       setError(
-        `Not enough tokens. You need ${tokenCost} token${tokenCost === 1 ? "" : "s"} for this scene.`,
+        `Not enough tokens. You need ${tokenCost} token${tokenCost === 1 ? "" : "s"} for this story.`,
       );
       return;
     }
@@ -142,7 +142,7 @@ export default function ComicBook() {
     if (!hasEnoughTokens) {
       return "Not enough tokens";
     }
-    return formatGenerateLabel(tokenCost, "Generate scene");
+    return formatGenerateLabel(tokenCost, "Generate story");
   }
 
   const canGenerate =
@@ -207,22 +207,25 @@ export default function ComicBook() {
               ))}
             </select>
 
-            <label className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-sm text-white sm:justify-center">
-              <span className="text-muted">Pages</span>
-              <input
-                type="number"
-                min={MIN_PAGES}
-                max={MAX_PAGES}
-                value={pages}
-                onChange={(e) => {
-                  const next = Number(e.target.value);
-                  setPages(
-                    Math.min(MAX_PAGES, Math.max(MIN_PAGES, next || MIN_PAGES)),
-                  );
-                }}
-                className="w-16 rounded-lg border border-border bg-background px-2 py-1 text-center"
-              />
-            </label>
+            <div className="flex flex-col gap-2 sm:w-44">
+              <span className="text-sm font-medium text-white">Scenes</span>
+              <div className="flex rounded-xl border border-border bg-surface p-1">
+                {ALLOWED_PAGE_COUNTS.map((count) => (
+                  <button
+                    key={count}
+                    type="button"
+                    onClick={() => setPages(count)}
+                    className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors sm:text-sm ${
+                      pages === count
+                        ? "bg-accent text-white shadow-sm"
+                        : "text-muted hover:text-white"
+                    }`}
+                  >
+                    {count} scenes
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           <TattooRenderModeToggle
@@ -293,7 +296,7 @@ export default function ComicBook() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={comic.pages[current].image}
-              alt={`Page ${current + 1}`}
+              alt={`Scene ${current + 1}`}
               className="w-full object-contain"
             />
             <p className="border-t border-border p-4 text-center text-sm text-muted sm:text-base">
@@ -311,7 +314,7 @@ export default function ComicBook() {
               ← Prev
             </button>
             <span className="text-sm text-muted">
-              Page {current + 1} / {comic.pages.length}
+              Scene {current + 1} / {comic.pages.length}
             </span>
             <button
               type="button"
@@ -331,7 +334,7 @@ export default function ComicBook() {
               download
               className="btn-primary rounded-full px-5 py-2 text-sm font-semibold text-white"
             >
-              Download page
+              Download scene
             </a>
             <button
               type="button"

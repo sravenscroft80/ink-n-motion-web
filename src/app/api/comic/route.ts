@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import {
+  isAllowedPageCount,
   isComicStyle,
-  MAX_PAGES,
-  MIN_PAGES,
 } from "@/lib/comic-config";
 import { generateComic } from "@/lib/comic-generate";
 import {
@@ -23,7 +22,7 @@ import {
 import { refundTokens, spendTokens } from "@/lib/tokens";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 interface ComicRequestBody {
   imageUrl?: string;
@@ -101,13 +100,9 @@ export async function POST(request: Request) {
   }
 
   const pageCount = Number(pages);
-  if (
-    !Number.isInteger(pageCount) ||
-    pageCount < MIN_PAGES ||
-    pageCount > MAX_PAGES
-  ) {
+  if (!Number.isInteger(pageCount) || !isAllowedPageCount(pageCount)) {
     return NextResponse.json(
-      { error: `pages must be an integer between ${MIN_PAGES} and ${MAX_PAGES}.` },
+      { error: "pages must be 3 or 5." },
       { status: 400 },
     );
   }
