@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ShareButton } from "@/components/ShareButton";
 import { useMemo, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { formatGenerateLabel } from "@/lib/format-tokens";
@@ -286,7 +287,7 @@ export function MotionStudio() {
             playsInline
             className="w-full"
           />
-          <div className="flex justify-center pb-4">
+          <div className="flex flex-wrap justify-center gap-3 pb-4">
             <a
               href={videoUrl}
               download
@@ -294,6 +295,10 @@ export function MotionStudio() {
             >
               Download video
             </a>
+            <ShareButton
+              url={videoUrl}
+              title="My tattoo video from Ink-N-Motion"
+            />
           </div>
         </div>
       )}

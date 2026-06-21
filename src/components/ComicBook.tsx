@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ShareButton } from "@/components/ShareButton";
 import { useMemo, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import {
@@ -479,21 +480,33 @@ export default function ComicBook() {
 
           <div className="mt-4 flex flex-wrap justify-center gap-3">
             {currentSceneVideo?.status === "done" && currentSceneVideo.videoUrl ? (
-              <a
-                href={currentSceneVideo.videoUrl}
-                download
-                className="btn-primary rounded-full px-5 py-2 text-sm font-semibold text-white"
-              >
-                Download clip
-              </a>
+              <>
+                <a
+                  href={currentSceneVideo.videoUrl}
+                  download
+                  className="btn-primary rounded-full px-5 py-2 text-sm font-semibold text-white"
+                >
+                  Download clip
+                </a>
+                <ShareButton
+                  url={currentSceneVideo.videoUrl}
+                  title="My tattoo scene from Ink-N-Motion"
+                />
+              </>
             ) : (
-              <a
-                href={comic.pages[current].image}
-                download
-                className="btn-primary rounded-full px-5 py-2 text-sm font-semibold text-white"
-              >
-                Download scene
-              </a>
+              <>
+                <a
+                  href={comic.pages[current].image}
+                  download
+                  className="btn-primary rounded-full px-5 py-2 text-sm font-semibold text-white"
+                >
+                  Download scene
+                </a>
+                <ShareButton
+                  url={comic.pages[current].image}
+                  title="My tattoo scene from Ink-N-Motion"
+                />
+              </>
             )}
             <button
               type="button"
