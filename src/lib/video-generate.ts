@@ -1,5 +1,6 @@
 import { GenerationError } from "./generation-errors";
 import {
+  createPrediction,
   parseModelSpec,
   runReplicateWithTarget,
 } from "./replicate-runner";
@@ -24,6 +25,50 @@ function resolveVideoModelTarget() {
   return parseModelSpec(modelSpec);
 }
 
+function buildVideoInput(
+  imageUrl: string,
+  durationSeconds: 5 | 10,
+  prompt?: string,
+): Record<string, unknown> {
+  const trimmedPrompt = prompt?.trim();
+
+  return {
+    image: imageUrl,
+    duration: durationSeconds,
+    resolution: "720p",
+    prompt:
+      trimmedPrompt && trimmedPrompt.length > 0
+        ? trimmedPrompt
+        : DEFAULT_VIDEO_PROMPT,
+  };
+}
+
+export async function startVideoGeneration(
+  imageUrl: string,
+  durationSeconds: 5 | 10,
+  prompt?: string,
+): Promise<string> {
+  if (!isValidImageUrl(imageUrl)) {
+    throw new GenerationError("A valid imageUrl is required.", "replicate_create");
+  }
+
+  const input = buildVideoInput(imageUrl, durationSeconds, prompt);
+
+  try {
+    const prediction = await createPrediction(resolveVideoModelTarget(), input);
+    return prediction.id!;
+  } catch (error) {
+    if (error instanceof GenerationError) {
+      throw error;
+    }
+    throw new GenerationError(
+      error instanceof Error ? error.message : "Video generation failed",
+      "replicate_create",
+      error,
+    );
+  }
+}
+
 export async function generateVideo(
   imageUrl: string,
   durationSeconds: 5 | 10,
@@ -33,16 +78,7 @@ export async function generateVideo(
     throw new GenerationError("A valid imageUrl is required.", "replicate_create");
   }
 
-  const trimmedPrompt = prompt?.trim();
-  const input: Record<string, unknown> = {
-    image: imageUrl,
-    duration: durationSeconds,
-    resolution: "720p",
-    prompt:
-      trimmedPrompt && trimmedPrompt.length > 0
-        ? trimmedPrompt
-        : DEFAULT_VIDEO_PROMPT,
-  };
+  const input = buildVideoInput(imageUrl, durationSeconds, prompt);
 
   try {
     return await runReplicateWithTarget(

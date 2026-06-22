@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ShareButton } from "@/components/ShareButton";
 import { StylePackPicker } from "@/components/StylePackPicker";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import {
   TattooRenderModeToggle,
@@ -17,6 +17,7 @@ import {
   type ComicStyle,
 } from "@/lib/comic-config";
 import { formatGenerateLabel } from "@/lib/format-tokens";
+import { startAndPollMotionVideo } from "@/lib/motion-client";
 import {
   getComicPageCost,
   TOKEN_ACTIONS,
@@ -48,6 +49,13 @@ export default function ComicBook() {
   const [comic, setComic] = useState<Comic | null>(null);
   const [current, setCurrent] = useState(0);
   const [sceneVideos, setSceneVideos] = useState<SceneVideoState[]>([]);
+  const motionPollAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      motionPollAbortRef.current?.abort();
+    };
+  }, []);
 
   const isolate = tattooRenderModeToIsolate(renderMode);
   const tokenCost = useMemo(
@@ -182,27 +190,23 @@ export default function ComicBook() {
         ? `Animate this scene: ${caption}`
         : GENERIC_MOTION_PROMPT;
 
-      const res = await fetch("/api/motion", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          imageUrl: comic.pages[sceneIndex].image,
-          durationSeconds,
-          prompt: motionPrompt,
-        }),
+      motionPollAbortRef.current?.abort();
+      const controller = new AbortController();
+      motionPollAbortRef.current = controller;
+
+      const result = await startAndPollMotionVideo({
+        imageUrl: comic.pages[sceneIndex].image,
+        durationSeconds,
+        prompt: motionPrompt,
+        signal: controller.signal,
       });
 
-      const data = (await res.json().catch(() => ({}))) as GenerateErrorResponse & {
-        videoUrl?: string;
-      };
-
-      if (!res.ok || !data.videoUrl) {
-        const refundNote = data.refunded ? " Tokens refunded." : "";
+      if (!result.ok) {
         setSceneVideos((prev) => {
           const next = [...prev];
           next[sceneIndex] = {
             status: "error",
-            error: (data.error || "Animation failed") + refundNote,
+            error: result.error,
           };
           return next;
         });
@@ -212,11 +216,14 @@ export default function ComicBook() {
 
       setSceneVideos((prev) => {
         const next = [...prev];
-        next[sceneIndex] = { status: "done", videoUrl: data.videoUrl };
+        next[sceneIndex] = { status: "done", videoUrl: result.videoUrl };
         return next;
       });
       await refreshBalance();
     } catch (e: unknown) {
+      if (e instanceof DOMException && e.name === "AbortError") {
+        return;
+      }
       setSceneVideos((prev) => {
         const next = [...prev];
         next[sceneIndex] = {
@@ -406,7 +413,7 @@ export default function ComicBook() {
             )}
             {currentSceneVideo?.status === "loading" && (
               <p className="border-t border-border px-4 py-2 text-center text-xs text-muted">
-                Animating scene {current + 1}… (can take 1–3 minutes)
+                Animating scene {current + 1}… (this can take a few minutes)
               </p>
             )}
             {currentSceneVideo?.status === "error" && currentSceneVideo.error && (

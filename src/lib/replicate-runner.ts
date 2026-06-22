@@ -128,6 +128,82 @@ async function createPredictionWithRetry(
   throw lastError;
 }
 
+export async function createPrediction(
+  target: { model?: string; version?: string },
+  input: Record<string, unknown>,
+): Promise<Awaited<ReturnType<Replicate["predictions"]["create"]>>> {
+  const client = getReplicateClient();
+
+  try {
+    const prediction = await createPredictionWithRetry(client, target, input);
+
+    if (!prediction.id) {
+      throw new GenerationError(
+        "Replicate did not return a prediction id",
+        "replicate_create",
+      );
+    }
+
+    return prediction;
+  } catch (error) {
+    if (error instanceof GenerationError) {
+      throw error;
+    }
+
+    throw new GenerationError(
+      error instanceof Error
+        ? error.message
+        : "Failed to start Replicate prediction",
+      "replicate_create",
+      error,
+    );
+  }
+}
+
+export async function getPredictionResult(
+  predictionId: string,
+  stage: GenerationStage,
+): Promise<{
+  status: "processing" | "succeeded" | "failed";
+  output?: string;
+  error?: string;
+}> {
+  const client = getReplicateClient();
+
+  try {
+    const prediction = await client.predictions.get(predictionId);
+
+    if (prediction.status === "succeeded") {
+      const outputUrl = extractOutputUrl(prediction.output);
+      if (!outputUrl) {
+        return {
+          status: "failed",
+          error: "Replicate returned an unexpected response format",
+        };
+      }
+      return { status: "succeeded", output: outputUrl };
+    }
+
+    if (prediction.status === "failed" || prediction.status === "canceled") {
+      const detail =
+        typeof prediction.error === "string"
+          ? prediction.error
+          : "Replicate prediction failed";
+      return { status: "failed", error: detail };
+    }
+
+    return { status: "processing" };
+  } catch (error) {
+    throw new GenerationError(
+      error instanceof Error
+        ? error.message
+        : "Failed to fetch Replicate prediction",
+      stage,
+      error,
+    );
+  }
+}
+
 async function pollPrediction(
   client: Replicate,
   predictionId: string,

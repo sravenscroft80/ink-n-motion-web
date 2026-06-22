@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import { ShareButton } from "@/components/ShareButton";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { StylePackPicker } from "@/components/StylePackPicker";
 import { formatGenerateLabel } from "@/lib/format-tokens";
 import { getStylePrompt } from "@/lib/style-packs";
+import { startAndPollMotionVideo } from "@/lib/motion-client";
 import {
   TOKEN_ACTIONS,
   getTokenCost,
 } from "@/lib/token-costs";
-import type { GenerateErrorResponse, StylePack } from "@/lib/types";
+import type { StylePack } from "@/lib/types";
 
 const DURATION_OPTIONS = [
   { seconds: 5 as const, cost: getTokenCost(TOKEN_ACTIONS.video_5s) },
@@ -28,6 +29,13 @@ export function MotionStudio() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const motionPollAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      motionPollAbortRef.current?.abort();
+    };
+  }, []);
 
   const tokenCost = useMemo(
     () =>
@@ -85,41 +93,38 @@ export function MotionStudio() {
 
       const motionPrompt = getStylePrompt(selectedStyle);
 
-      const res = await fetch("/api/motion", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          imageUrl: url,
-          durationSeconds,
-          prompt: motionPrompt,
-        }),
+      motionPollAbortRef.current?.abort();
+      const controller = new AbortController();
+      motionPollAbortRef.current = controller;
+
+      const result = await startAndPollMotionVideo({
+        imageUrl: url,
+        durationSeconds,
+        prompt: motionPrompt,
+        signal: controller.signal,
       });
 
-      const data = (await res.json().catch(() => ({}))) as GenerateErrorResponse & {
-        videoUrl?: string;
-      };
-
-      if (res.status === 401) {
-        setError(data.error || "Log in to create.");
-        return;
-      }
-
-      if (res.status === 402) {
-        setError(data.error || "Not enough tokens.");
+      if (!result.ok) {
+        if (result.error.includes("Log in")) {
+          setError(result.error);
+          return;
+        }
+        if (result.error.includes("Not enough tokens")) {
+          setError(result.error);
+          await refreshBalance();
+          return;
+        }
+        setError(result.error);
         await refreshBalance();
         return;
       }
 
-      if (!res.ok || !data.videoUrl) {
-        const refundNote = data.refunded ? " Your tokens were refunded." : "";
-        setError((data.error || "Generation failed") + refundNote);
-        await refreshBalance();
-        return;
-      }
-
-      setVideoUrl(data.videoUrl);
+      setVideoUrl(result.videoUrl);
       await refreshBalance();
     } catch (e: unknown) {
+      if (e instanceof DOMException && e.name === "AbortError") {
+        return;
+      }
       setError(e instanceof Error ? e.message : "Something went wrong");
       await refreshBalance();
     } finally {
@@ -252,7 +257,7 @@ export function MotionStudio() {
 
       {loading && (
         <p className="text-center text-xs text-muted">
-          Video generation can take 1–3 minutes. Please keep this tab open.
+          Video generation can take a few minutes. Please keep this tab open.
         </p>
       )}
 
