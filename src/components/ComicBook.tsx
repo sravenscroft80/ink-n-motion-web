@@ -27,6 +27,7 @@ import type { GenerateErrorResponse } from "@/lib/types";
 
 const VIDEO_5S_COST = getTokenCost(TOKEN_ACTIONS.video_5s);
 const VIDEO_10S_COST = getTokenCost(TOKEN_ACTIONS.video_10s);
+const STORAGE_KEY = "ink-n-motion:comic-result:v1";
 const GENERIC_MOTION_PROMPT =
   "Bring this image to life with subtle natural motion, cinematic gentle movement, smooth animation";
 
@@ -35,6 +36,48 @@ type SceneVideoState = {
   videoUrl?: string;
   error?: string;
 };
+
+interface StoredComicResult {
+  comic: Comic;
+  current: number;
+  sceneVideos: SceneVideoState[];
+}
+
+function normalizeSceneVideosForStorage(
+  sceneVideos: SceneVideoState[],
+): SceneVideoState[] {
+  return sceneVideos.map((entry) =>
+    entry.status === "loading" ? { status: "idle" as const } : entry,
+  );
+}
+
+function isStoredComicResult(value: unknown): value is StoredComicResult {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  const comic = record.comic;
+
+  if (!comic || typeof comic !== "object") {
+    return false;
+  }
+
+  const comicRecord = comic as Record<string, unknown>;
+  if (typeof comicRecord.title !== "string" || !Array.isArray(comicRecord.pages)) {
+    return false;
+  }
+
+  if (typeof record.current !== "number" || !Number.isInteger(record.current) || record.current < 0) {
+    return false;
+  }
+
+  if (!Array.isArray(record.sceneVideos)) {
+    return false;
+  }
+
+  return true;
+}
 
 export default function ComicBook() {
   const { user, tokens, authLoading, refreshBalance, isAuthEnabled } = useAuth();
@@ -56,6 +99,59 @@ export default function ComicBook() {
       motionPollAbortRef.current?.abort();
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        return;
+      }
+
+      const parsed: unknown = JSON.parse(raw);
+      if (!isStoredComicResult(parsed)) {
+        return;
+      }
+
+      const pageCount = parsed.comic.pages.length;
+      const restoredCurrent = Math.min(parsed.current, Math.max(pageCount - 1, 0));
+      const restoredSceneVideos = normalizeSceneVideosForStorage(
+        parsed.sceneVideos.slice(0, pageCount),
+      );
+
+      while (restoredSceneVideos.length < pageCount) {
+        restoredSceneVideos.push({ status: "idle" });
+      }
+
+      setComic(parsed.comic);
+      setCurrent(restoredCurrent);
+      setSceneVideos(restoredSceneVideos);
+    } catch {
+      // Ignore invalid or corrupted session data.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || comic === null) {
+      return;
+    }
+
+    try {
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          comic,
+          current,
+          sceneVideos: normalizeSceneVideosForStorage(sceneVideos),
+        }),
+      );
+    } catch {
+      // Ignore quota or serialization errors.
+    }
+  }, [comic, current, sceneVideos]);
 
   const isolate = tattooRenderModeToIsolate(renderMode);
   const tokenCost = useMemo(
@@ -539,6 +635,9 @@ export default function ComicBook() {
                 setComic(null);
                 setCurrent(0);
                 setSceneVideos([]);
+                if (typeof window !== "undefined") {
+                  sessionStorage.removeItem(STORAGE_KEY);
+                }
               }}
               className="btn-secondary rounded-full px-5 py-2 text-sm"
             >
