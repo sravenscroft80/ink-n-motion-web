@@ -31,6 +31,103 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+const MAX_CREATE_RETRIES = 5;
+const BASE_BACKOFF_MS = 2000;
+
+function isRateLimitError(error: unknown): boolean {
+  if (error && typeof error === "object") {
+    const err = error as Record<string, unknown>;
+
+    if (err.status === 429) {
+      return true;
+    }
+
+    const response = err.response;
+    if (response && typeof response === "object") {
+      const resp = response as Record<string, unknown>;
+      if (resp.status === 429) {
+        return true;
+      }
+    }
+  }
+
+  const message =
+    error instanceof Error
+      ? error.message
+      : error &&
+          typeof error === "object" &&
+          "message" in error &&
+          typeof (error as { message: unknown }).message === "string"
+        ? (error as { message: string }).message
+        : "";
+
+  return message.includes("429") || message.includes("Too Many Requests");
+}
+
+function getRetryAfterMs(error: unknown, attempt: number): number {
+  if (error && typeof error === "object") {
+    const err = error as Record<string, unknown>;
+
+    if (typeof err.retry_after === "number" && err.retry_after > 0) {
+      return err.retry_after * 1000;
+    }
+
+    const response = err.response;
+    if (response && typeof response === "object") {
+      const resp = response as Record<string, unknown>;
+
+      if (typeof resp.retry_after === "number" && resp.retry_after > 0) {
+        return resp.retry_after * 1000;
+      }
+
+      const headers = resp.headers;
+      if (headers && typeof headers === "object") {
+        const headerRecord = headers as Record<string, unknown>;
+        const retryAfter =
+          headerRecord["retry-after"] ?? headerRecord["Retry-After"];
+        const seconds = Number(retryAfter);
+        if (!Number.isNaN(seconds) && seconds > 0) {
+          return seconds * 1000;
+        }
+      }
+    }
+  }
+
+  const jitter = Math.floor(Math.random() * 250);
+  return BASE_BACKOFF_MS * 2 ** attempt + jitter;
+}
+
+async function createPredictionWithRetry(
+  client: Replicate,
+  target: { model?: string; version?: string },
+  input: Record<string, unknown>,
+): Promise<Awaited<ReturnType<Replicate["predictions"]["create"]>>> {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < MAX_CREATE_RETRIES; attempt += 1) {
+    try {
+      return await client.predictions.create({
+        ...target,
+        input,
+      } as Parameters<Replicate["predictions"]["create"]>[0]);
+    } catch (error) {
+      lastError = error;
+
+      if (!isRateLimitError(error)) {
+        throw error;
+      }
+
+      if (attempt === MAX_CREATE_RETRIES - 1) {
+        throw error;
+      }
+
+      await sleep(getRetryAfterMs(error, attempt));
+    }
+  }
+
+  throw lastError;
+}
+
 async function pollPrediction(
   client: Replicate,
   predictionId: string,
@@ -100,10 +197,7 @@ export async function runReplicateWithTarget(
 
   let prediction;
   try {
-    prediction = await client.predictions.create({
-      ...target,
-      input,
-    } as Parameters<Replicate["predictions"]["create"]>[0]);
+    prediction = await createPredictionWithRetry(client, target, input);
   } catch (error) {
     throw new GenerationError(
       error instanceof Error
