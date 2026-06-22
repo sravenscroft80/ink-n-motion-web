@@ -26,6 +26,8 @@ import type { GenerateErrorResponse } from "@/lib/types";
 
 const VIDEO_5S_COST = getTokenCost(TOKEN_ACTIONS.video_5s);
 const VIDEO_10S_COST = getTokenCost(TOKEN_ACTIONS.video_10s);
+const GENERIC_MOTION_PROMPT =
+  "Bring this image to life with subtle natural motion, cinematic gentle movement, smooth animation";
 
 type SceneVideoState = {
   status: "idle" | "loading" | "done" | "error";
@@ -175,12 +177,18 @@ export default function ComicBook() {
     });
 
     try {
+      const caption = comic.pages[sceneIndex].caption?.trim();
+      const motionPrompt = caption
+        ? `Animate this scene: ${caption}`
+        : GENERIC_MOTION_PROMPT;
+
       const res = await fetch("/api/motion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           imageUrl: comic.pages[sceneIndex].image,
           durationSeconds,
+          prompt: motionPrompt,
         }),
       });
 

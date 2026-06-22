@@ -6,6 +6,8 @@ import {
 
 const DEFAULT_VIDEO_MODEL = "bytedance/seedance-1-lite";
 const VIDEO_POLL_TIMEOUT_MS = 270_000;
+export const DEFAULT_VIDEO_PROMPT =
+  "Bring this image to life with subtle natural motion, cinematic gentle movement, smooth animation";
 
 function isValidImageUrl(value: string): boolean {
   try {
@@ -36,7 +38,10 @@ export async function generateVideo(
     image: imageUrl,
     duration: durationSeconds,
     resolution: "720p",
-    ...(trimmedPrompt ? { prompt: trimmedPrompt } : {}),
+    prompt:
+      trimmedPrompt && trimmedPrompt.length > 0
+        ? trimmedPrompt
+        : DEFAULT_VIDEO_PROMPT,
   };
 
   try {

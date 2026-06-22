@@ -82,6 +82,13 @@ export async function POST(request: Request) {
     );
   }
 
+  if (prompt !== undefined && typeof prompt !== "string") {
+    return NextResponse.json(
+      { error: "prompt must be a string when provided." },
+      { status: 400 },
+    );
+  }
+
   const durationSeconds = Number(durationRaw);
   const action = resolveVideoAction(durationSeconds);
   if (!action) {
