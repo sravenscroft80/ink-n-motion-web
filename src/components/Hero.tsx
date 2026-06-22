@@ -22,7 +22,7 @@ export function Hero({ onGetStarted }: HeroProps) {
           </h1>
           <p className="max-w-xl text-base leading-relaxed text-muted sm:text-lg">
             Turn any tattoo into a multi-scene movie story — then bring scenes
-            to life with motion. Pick from 11 style packs and create in
+            to life with motion. Pick from 12 style packs and create in
             seconds.
           </p>
         </div>
@@ -45,7 +45,7 @@ export function Hero({ onGetStarted }: HeroProps) {
 
         <div className="flex flex-wrap gap-6 pt-2 text-sm text-muted">
           <span>✦ Multi-scene stories</span>
-          <span>✦ 11 style packs</span>
+          <span>✦ 12 style packs</span>
           <span>✦ Bring scenes to life</span>
         </div>
       </div>

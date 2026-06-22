@@ -28,6 +28,11 @@ export interface GenerateRenderOptions {
   scenePrompt?: string;
   /** When true, run background removal before stylization. Default false. */
   isolate?: boolean;
+  /**
+   * 0–1: higher values preserve more of the source image (maps to lower SDXL prompt_strength).
+   * When omitted, uses the default strength for the render mode.
+   */
+  imageInfluence?: number;
 }
 
 function resolveStylizeModelTarget():
@@ -56,6 +61,19 @@ function buildStylizePrompt(
     return `comic book panel illustration, ${scene}, tattoo art on skin, ${stylePrompt}`;
   }
   return `tattoo art, comic book illustration on skin, ${stylePrompt}`;
+}
+
+function resolvePromptStrength(
+  options: GenerateRenderOptions,
+  isolate: boolean,
+): number {
+  if (options.imageInfluence !== undefined) {
+    const maxStrength = isolate ? 0.92 : 0.9;
+    const minStrength = isolate ? 0.48 : 0.45;
+    return maxStrength - options.imageInfluence * (maxStrength - minStrength);
+  }
+
+  return isolate ? 0.82 : 0.75;
 }
 
 function wrapTimeoutError(error: GenerationError, isolate: boolean): GenerationError {
@@ -92,7 +110,7 @@ export async function generateComicRender(
         image: prepared.url,
         prompt,
         negative_prompt: isolate ? ISOLATED_NEGATIVE_PROMPT : ON_SKIN_NEGATIVE_PROMPT,
-        prompt_strength: isolate ? 0.82 : 0.75,
+        prompt_strength: resolvePromptStrength(options, isolate),
         num_inference_steps: 30,
         guidance_scale: 7.5,
         num_outputs: 1,

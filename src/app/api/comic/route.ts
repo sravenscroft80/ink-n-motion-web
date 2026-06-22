@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  ALLOWED_PAGE_COUNTS,
   isAllowedPageCount,
   isComicStyle,
 } from "@/lib/comic-config";
@@ -102,7 +103,7 @@ export async function POST(request: Request) {
   const pageCount = Number(pages);
   if (!Number.isInteger(pageCount) || !isAllowedPageCount(pageCount)) {
     return NextResponse.json(
-      { error: "pages must be 3 or 5." },
+      { error: `pages must be ${ALLOWED_PAGE_COUNTS.join(" or ")}.` },
       { status: 400 },
     );
   }

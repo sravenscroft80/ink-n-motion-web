@@ -1,10 +1,23 @@
-export type StylePack = string;
+export type StylePack =
+  | "classic-comic"
+  | "manga"
+  | "noir"
+  | "cinematic"
+  | "realism"
+  | "psychedelic-visionary"
+  | "horror"
+  | "steampunk"
+  | "japanese-traditional"
+  | "anime"
+  | "cartoon"
+  | "true-ink";
 
 export interface StylePackOption {
   id: StylePack;
   label: string;
   description: string;
   prompt: string;
+  sample?: string;
 }
 
 export interface GenerateRequest {

@@ -4,8 +4,9 @@ import Link from "next/link";
 import { ShareButton } from "@/components/ShareButton";
 import { useMemo, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
+import { StylePackPicker } from "@/components/StylePackPicker";
 import { formatGenerateLabel } from "@/lib/format-tokens";
-import { getStylePrompt, STYLE_PACKS } from "@/lib/style-packs";
+import { getStylePrompt } from "@/lib/style-packs";
 import {
   TOKEN_ACTIONS,
   getTokenCost,
@@ -180,29 +181,14 @@ export function MotionStudio() {
         )}
       </label>
 
-      <div className="space-y-2">
-        <label
-          htmlFor="motion-studio-style"
-          className="text-sm font-medium text-white"
-        >
-          Style pack
-        </label>
-        <select
-          id="motion-studio-style"
-          value={selectedStyle}
-          onChange={(event) => setSelectedStyle(event.target.value)}
-          className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-white outline-none transition-colors focus:border-accent/60"
-        >
-          {STYLE_PACKS.map((pack) => (
-            <option key={pack.id} value={pack.id} className="bg-surface">
-              {pack.label} — {pack.description}
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-muted">
-          Used as a motion prompt to guide the animation style.
-        </p>
-      </div>
+      <StylePackPicker
+        id="motion-studio-style"
+        value={selectedStyle}
+        onChange={setSelectedStyle}
+      />
+      <p className="text-xs text-muted">
+        Used as a motion prompt to guide the animation style.
+      </p>
 
       <div className="flex flex-col gap-2">
         <span className="text-sm font-medium text-white">Duration</span>
