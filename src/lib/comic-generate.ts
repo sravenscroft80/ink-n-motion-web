@@ -17,6 +17,9 @@ function buildScenePrompt(
     if (!isFinal) {
       prompt +=
         ", depict only this story moment as described, do not show the final tattoo form or story ending yet";
+    } else {
+      prompt +=
+        ", this is the finale — the real tattoo design from the reference, faithfully preserved and cleaned up, enhanced as the story's payoff";
     }
     return prompt;
   }
@@ -27,27 +30,19 @@ function buildScenePrompt(
       ", focus on this scene's subject and action only, do not jump ahead to the story's ending or final tattoo form, interpret the caption not the reference photo's finished subject";
   } else {
     prompt +=
-      ", the final scene should reflect the actual tattoo design from the reference";
+      ", this is the finale — render the actual tattoo from the reference photo as the story's payoff, faithfully preserving the real tattoo's subject and composition, enhanced and integrated into the scene in the chosen art style";
   }
   return prompt;
 }
 
-function resolveImageInfluence(
-  index: number,
-  pageCount: number,
-  style: ComicStyle,
-): number {
+function resolveImageInfluence(index: number, pageCount: number): number {
   const isFinal = index === pageCount - 1;
 
-  if (style === "true-ink") {
-    return isFinal ? 0.92 : 0.78;
-  }
-
   if (isFinal) {
-    return 0.55;
+    return 0.85;
   }
 
-  return 0.22;
+  return 0.25;
 }
 
 export async function generateComic(
@@ -66,7 +61,7 @@ export async function generateComic(
     const image = await generateComicRender(imageUrl, style as StylePack, {
       scenePrompt,
       isolate,
-      imageInfluence: resolveImageInfluence(index, pageCount, style),
+      imageInfluence: resolveImageInfluence(index, pageCount),
     });
     images.push(image);
   }
