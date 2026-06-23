@@ -4,6 +4,9 @@ import { generateComicRender } from "@/lib/replicate";
 import { planComicScript } from "@/lib/story-director";
 import type { StylePack } from "@/lib/types";
 
+const CHARACTER_SHEET_INFLUENCE = 0.45;
+const CHAINED_SCENE_INFLUENCE = 0.35;
+
 function withSubject(base: string, subject: string): string {
   const trimmedSubject = subject.trim();
   if (!trimmedSubject) {
@@ -35,27 +38,11 @@ function buildScenePrompt(
     return withSubject(prompt, subject);
   }
 
-  let prompt: string;
-  if (!isFinal) {
-    prompt =
-      `story beat ${beat} of ${pageCount}: ${caption}, a fully illustrated story scene depicting this moment, dynamic environment and background, cinematic composition` +
-      ", depict the story moment as a complete illustrated scene, do not just show the tattoo on skin, do not jump ahead to the ending or final tattoo form";
-  } else {
-    prompt = `story beat ${beat} of ${pageCount}: ${caption}, comic book panel illustration`;
-    prompt +=
-      ", this is the finale — render the actual tattoo from the reference photo as the story's payoff, faithfully preserving the real tattoo's subject and composition, enhanced and integrated into the scene in the chosen art style";
-  }
+  const prompt =
+    `story beat ${beat} of ${pageCount}: ${caption}, a fully illustrated story scene depicting this moment, dynamic environment and background, cinematic composition` +
+    ", depict the story moment as a complete illustrated scene, do not just show the tattoo on skin, do not jump ahead to the ending or final tattoo form";
+
   return withSubject(prompt, subject);
-}
-
-function resolveImageInfluence(index: number, pageCount: number): number {
-  const isFinal = index === pageCount - 1;
-
-  if (isFinal) {
-    return 0.85;
-  }
-
-  return 0.12;
 }
 
 export async function generateComic(
@@ -82,6 +69,7 @@ export async function generateComic(
   }
 
   const images: string[] = [];
+  let characterRef = imageUrl;
 
   for (const [index, caption] of captions.entries()) {
     const scenePrompt = buildScenePrompt(
@@ -92,11 +80,20 @@ export async function generateComic(
       subject,
     );
 
-    const image = await generateComicRender(imageUrl, style as StylePack, {
+    const referenceImage = index === 0 ? imageUrl : characterRef;
+    const imageInfluence =
+      index === 0 ? CHARACTER_SHEET_INFLUENCE : CHAINED_SCENE_INFLUENCE;
+
+    const image = await generateComicRender(referenceImage, style as StylePack, {
       scenePrompt,
       isolate,
-      imageInfluence: resolveImageInfluence(index, pageCount),
+      imageInfluence,
     });
+
+    if (index === 0) {
+      characterRef = image;
+    }
+
     images.push(image);
   }
 
