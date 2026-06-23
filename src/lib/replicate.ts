@@ -58,7 +58,7 @@ function buildStylizePrompt(
   }
 
   if (scene) {
-    return `comic book panel illustration, ${scene}, tattoo art on skin, ${stylePrompt}`;
+    return `illustrated comic story scene, ${scene}, ${stylePrompt}`;
   }
   return `tattoo art, comic book illustration on skin, ${stylePrompt}`;
 }

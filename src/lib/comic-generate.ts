@@ -35,11 +35,13 @@ function buildScenePrompt(
     return withSubject(prompt, subject);
   }
 
-  let prompt = `story beat ${beat} of ${pageCount}: ${caption}, comic book panel illustration`;
+  let prompt: string;
   if (!isFinal) {
-    prompt +=
-      ", focus on this scene's subject and action only, do not jump ahead to the story's ending or final tattoo form, interpret the caption not the reference photo's finished subject";
+    prompt =
+      `story beat ${beat} of ${pageCount}: ${caption}, a fully illustrated story scene depicting this moment, dynamic environment and background, cinematic composition` +
+      ", depict the story moment as a complete illustrated scene, do not just show the tattoo on skin, do not jump ahead to the ending or final tattoo form";
   } else {
+    prompt = `story beat ${beat} of ${pageCount}: ${caption}, comic book panel illustration`;
     prompt +=
       ", this is the finale — render the actual tattoo from the reference photo as the story's payoff, faithfully preserving the real tattoo's subject and composition, enhanced and integrated into the scene in the chosen art style";
   }
@@ -53,7 +55,7 @@ function resolveImageInfluence(index: number, pageCount: number): number {
     return 0.85;
   }
 
-  return 0.25;
+  return 0.12;
 }
 
 export async function generateComic(
