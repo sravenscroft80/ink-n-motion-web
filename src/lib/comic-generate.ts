@@ -1,13 +1,24 @@
 import type { Comic, ComicStyle } from "@/lib/comic-config";
 import { buildComicScript } from "@/lib/comic-story";
 import { generateComicRender } from "@/lib/replicate";
+import { planComicScript } from "@/lib/story-director";
 import type { StylePack } from "@/lib/types";
+
+function withSubject(base: string, subject: string): string {
+  const trimmedSubject = subject.trim();
+  if (!trimmedSubject) {
+    return base;
+  }
+
+  return `consistent recurring subject across all panels: ${trimmedSubject}. ${base}`;
+}
 
 function buildScenePrompt(
   caption: string,
   index: number,
   pageCount: number,
   isolate: boolean,
+  subject: string,
 ): string {
   const beat = index + 1;
   const isFinal = index === pageCount - 1;
@@ -21,7 +32,7 @@ function buildScenePrompt(
       prompt +=
         ", this is the finale — the real tattoo design from the reference, faithfully preserved and cleaned up, enhanced as the story's payoff";
     }
-    return prompt;
+    return withSubject(prompt, subject);
   }
 
   let prompt = `story beat ${beat} of ${pageCount}: ${caption}, comic book panel illustration`;
@@ -32,7 +43,7 @@ function buildScenePrompt(
     prompt +=
       ", this is the finale — render the actual tattoo from the reference photo as the story's payoff, faithfully preserving the real tattoo's subject and composition, enhanced and integrated into the scene in the chosen art style";
   }
-  return prompt;
+  return withSubject(prompt, subject);
 }
 
 function resolveImageInfluence(index: number, pageCount: number): number {
@@ -52,11 +63,32 @@ export async function generateComic(
   pageCount: number,
   isolate: boolean,
 ): Promise<Comic> {
-  const { title, captions } = buildComicScript(story, pageCount);
+  let title: string;
+  let captions: string[];
+  let subject = "";
+
+  try {
+    const plan = await planComicScript(story, pageCount);
+    title = plan.title;
+    captions = plan.captions;
+    subject = plan.subject;
+  } catch {
+    const fallback = buildComicScript(story, pageCount);
+    title = fallback.title;
+    captions = fallback.captions;
+    subject = "";
+  }
+
   const images: string[] = [];
 
   for (const [index, caption] of captions.entries()) {
-    const scenePrompt = buildScenePrompt(caption, index, pageCount, isolate);
+    const scenePrompt = buildScenePrompt(
+      caption,
+      index,
+      pageCount,
+      isolate,
+      subject,
+    );
 
     const image = await generateComicRender(imageUrl, style as StylePack, {
       scenePrompt,
