@@ -27,6 +27,17 @@ function FramePanel({
           role="img"
           aria-label={frame.alt}
         />
+      ) : frame.isVideo ? (
+        <video
+          src={frame.src}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="h-full w-full object-cover"
+          aria-label={frame.alt}
+          onError={() => setImageError(true)}
+        />
       ) : (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
@@ -40,12 +51,12 @@ function FramePanel({
   );
 }
 
-export function DemoSlideshow() {
+export function DemoSlideshow({ slides = DEMO_SLIDES }: { slides?: DemoSlide[] }) {
   const [index, setIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
 
-  const slideCount = DEMO_SLIDES.length;
+  const slideCount = slides.length;
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -82,7 +93,7 @@ export function DemoSlideshow() {
       onBlurCapture={() => setIsPaused(false)}
     >
       <div className="relative min-h-[420px] sm:min-h-[380px]">
-        {DEMO_SLIDES.map((slide, slideIndex) => (
+        {slides.map((slide, slideIndex) => (
           <SlideContent
             key={slide.id}
             slide={slide}
@@ -107,7 +118,7 @@ export function DemoSlideshow() {
           role="tablist"
           aria-label="Demo slides"
         >
-          {DEMO_SLIDES.map((slide, dotIndex) => (
+          {slides.map((slide, dotIndex) => (
             <button
               key={slide.id}
               type="button"

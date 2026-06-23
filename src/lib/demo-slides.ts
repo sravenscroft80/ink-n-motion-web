@@ -4,6 +4,8 @@ export interface DemoSlideFrame {
   alt: string;
   /** Fallback gradient when image is missing (Tailwind gradient classes) */
   gradient?: string;
+  /** When true, render as a looping muted video instead of an image */
+  isVideo?: boolean;
 }
 
 export interface DemoSlide {
@@ -78,3 +80,19 @@ export const DEMO_SLIDES: DemoSlide[] = [
     },
   },
 ];
+
+export const MOTION_DEMO_SLIDE: DemoSlide = {
+  id: "motion-butterfly",
+  caption: "Butterfly tattoo → animated motion clip",
+  before: {
+    src: "/demo/motion-before.jpg",
+    alt: "Original butterfly tattoo photo",
+    gradient: "from-amber-900/40 via-rose-900/30 to-zinc-900",
+  },
+  after: {
+    src: "/demo/motion-after.mp4",
+    alt: "Butterfly tattoo animated into a short video",
+    isVideo: true,
+    gradient: "from-violet-600/50 via-fuchsia-500/30 to-amber-400/40",
+  },
+};
