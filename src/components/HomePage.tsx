@@ -44,7 +44,10 @@ export function HomePage({
   }, [refreshTokensOnMount, user, refreshBalance]);
 
   const scrollToCreate = () => {
-    document.getElementById("create")?.scrollIntoView({ behavior: "smooth" });
+    const target =
+      document.getElementById("motion-studio-upload")?.closest("label") ??
+      document.getElementById("create");
+    target?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   return (
