@@ -21,9 +21,7 @@ export function Hero({ onGetStarted }: HeroProps) {
             come to life
           </h1>
           <p className="max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-            Turn any tattoo into a multi-scene movie story — then bring scenes
-            to life with motion. Pick from 12 style packs and create in
-            seconds.
+            Turn any tattoo into a multi-scene story, then animate it into motion. 12 style packs, ready in seconds.
           </p>
         </div>
 

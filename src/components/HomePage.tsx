@@ -102,7 +102,7 @@ export function HomePage({
       </main>
 
       <footer className="border-t border-border px-4 py-8 text-center text-xs text-muted sm:px-6">
-        <p>Ink-N-Motion · Movie Mode + Motion Studio · Built for Vercel</p>
+        <p>Ink-N-Motion</p>
       </footer>
     </>
   );

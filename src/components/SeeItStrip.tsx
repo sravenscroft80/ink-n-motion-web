@@ -24,9 +24,7 @@ export function SeeItStrip({ variant = "story" }: SeeItStripProps) {
             </h2>
           </div>
           <p className="max-w-md text-sm text-muted">
-            {isMotion
-              ? "Your real tattoo, animated into a short cinematic video."
-              : "Real tattoo photos turned into comic-book story panels."}
+            {isMotion ? "A real example." : "A real example."}
           </p>
         </div>
 
