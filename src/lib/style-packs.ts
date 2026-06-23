@@ -17,7 +17,7 @@ export const STYLE_PACKS: StylePackOption[] = [
     description: "Bold lines, halftone dots, vibrant pop-art colors",
     prompt:
       "bold black ink outlines, halftone Ben-Day dots, vibrant pop-art comic colors, dynamic comic panel",
-    sample: "/style-samples/classic-comic.jpg",
+    sample: "/style-samples/classic-comic.png",
   },
   {
     id: "manga",
@@ -25,7 +25,7 @@ export const STYLE_PACKS: StylePackOption[] = [
     description: "Japanese ink style with screentone shading",
     prompt:
       "black and white manga ink illustration, screentone shading, sharp clean linework, dramatic",
-    sample: "/style-samples/manga.jpg",
+    sample: "/style-samples/manga.png",
   },
   {
     id: "noir",
@@ -33,7 +33,7 @@ export const STYLE_PACKS: StylePackOption[] = [
     description: "High-contrast shadows, gritty crime-thriller mood",
     prompt:
       "high-contrast black and white noir, deep shadows, chiaroscuro lighting, gritty crime-thriller mood",
-    sample: "/style-samples/noir.jpg",
+    sample: "/style-samples/noir.png",
   },
   {
     id: "cinematic",
@@ -41,7 +41,7 @@ export const STYLE_PACKS: StylePackOption[] = [
     description: "Film-grade lighting, dramatic depth, movie-poster mood",
     prompt:
       "cinematic film still, dramatic volumetric lighting, shallow depth of field, color graded, anamorphic, epic movie poster composition, highly detailed",
-    sample: "/style-samples/cinematic.jpg",
+    sample: "/style-samples/cinematic.png",
   },
   {
     id: "realism",
@@ -49,7 +49,7 @@ export const STYLE_PACKS: StylePackOption[] = [
     description: "Photorealistic detail and natural lighting",
     prompt:
       "photorealistic, ultra detailed skin and texture, natural soft lighting, sharp focus, lifelike, high dynamic range",
-    sample: "/style-samples/realism.jpg",
+    sample: "/style-samples/realism.png",
   },
   {
     id: "psychedelic-visionary",
@@ -57,7 +57,7 @@ export const STYLE_PACKS: StylePackOption[] = [
     description: "Sacred-geometry, glowing fractal, visionary art",
     prompt:
       "visionary psychedelic art, intricate sacred geometry, glowing fractal patterns, luminous translucent layers, vibrant iridescent colors, mystical surreal detail",
-    sample: "/style-samples/psychedelic-visionary.jpg",
+    sample: "/style-samples/psychedelic-visionary.png",
   },
   {
     id: "horror",
@@ -65,7 +65,7 @@ export const STYLE_PACKS: StylePackOption[] = [
     description: "Dark, eerie, unsettling horror atmosphere",
     prompt:
       "dark horror art, eerie atmosphere, deep shadows, desaturated sickly palette, unsettling grim mood, gritty texture, cinematic dread",
-    sample: "/style-samples/horror.jpg",
+    sample: "/style-samples/horror.png",
   },
   {
     id: "steampunk",
@@ -73,7 +73,7 @@ export const STYLE_PACKS: StylePackOption[] = [
     description: "Brass gears, Victorian industrial fantasy",
     prompt:
       "steampunk art, brass gears and cogs, Victorian industrial machinery, copper and bronze tones, intricate mechanical detail, warm gaslight glow",
-    sample: "/style-samples/steampunk.jpg",
+    sample: "/style-samples/steampunk.png",
   },
   {
     id: "japanese-traditional",
@@ -81,7 +81,7 @@ export const STYLE_PACKS: StylePackOption[] = [
     description: "Ukiyo-e woodblock, irezumi linework",
     prompt:
       "traditional Japanese ukiyo-e woodblock art, irezumi tattoo linework, bold waves and clouds, flat color planes, fine ink outlines",
-    sample: "/style-samples/japanese-traditional.jpg",
+    sample: "/style-samples/japanese-traditional.png",
   },
   {
     id: "anime",
@@ -89,7 +89,7 @@ export const STYLE_PACKS: StylePackOption[] = [
     description: "Clean cel-shaded anime illustration",
     prompt:
       "clean cel-shaded anime illustration, vibrant saturated colors, expressive detailed eyes, crisp line art, soft anime shading",
-    sample: "/style-samples/anime.jpg",
+    sample: "/style-samples/anime.png",
   },
   {
     id: "cartoon",
@@ -97,7 +97,7 @@ export const STYLE_PACKS: StylePackOption[] = [
     description: "Playful bold cartoon with clean outlines",
     prompt:
       "playful cartoon illustration, bold clean outlines, bright flat colors, exaggerated shapes, fun lighthearted style",
-    sample: "/style-samples/cartoon.jpg",
+    sample: "/style-samples/cartoon.png",
   },
   {
     id: "true-ink",
@@ -105,7 +105,7 @@ export const STYLE_PACKS: StylePackOption[] = [
     description: "Your real tattoo, enhanced — cleaner lines, richer detail",
     prompt:
       "the same tattoo design, enhanced and cleaned up, crisp refined linework, richer detail and contrast, professional studio lighting, true to the original ink, no restyling",
-    sample: "/style-samples/true-ink.jpg",
+    sample: "/style-samples/true-ink.png",
   },
 ];
 
