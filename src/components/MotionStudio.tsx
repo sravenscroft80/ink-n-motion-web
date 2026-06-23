@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ShareButton } from "@/components/ShareButton";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
+import { GenerationProgress } from "@/components/GenerationProgress";
 import { StylePackPicker } from "@/components/StylePackPicker";
 import { formatGenerateLabel } from "@/lib/format-tokens";
 import { getStylePrompt } from "@/lib/style-packs";
@@ -256,9 +257,7 @@ export function MotionStudio() {
       )}
 
       {loading && (
-        <p className="text-center text-xs text-muted">
-          Video generation can take a few minutes. Please keep this tab open.
-        </p>
+        <GenerationProgress label="Generating motion…" />
       )}
 
       <button
@@ -269,6 +268,9 @@ export function MotionStudio() {
       >
         {buttonLabel()}
       </button>
+      <p className="text-center text-xs text-muted">
+        AI-generated for fun — results are creative interpretations and may not be accurate.
+      </p>
 
       {videoUrl && (
         <div className="space-y-3 overflow-hidden rounded-2xl border border-border bg-surface">

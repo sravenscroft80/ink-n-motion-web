@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { GenerationProgress } from "@/components/GenerationProgress";
 import { ShareButton } from "@/components/ShareButton";
 import { StylePackPicker } from "@/components/StylePackPicker";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -474,6 +475,10 @@ export default function ComicBook() {
             </div>
           )}
 
+          {loading && (
+            <GenerationProgress label="Illustrating your story…" />
+          )}
+
           <button
             type="button"
             onClick={() => void generate()}
@@ -482,6 +487,9 @@ export default function ComicBook() {
           >
             {buttonLabel()}
           </button>
+          <p className="text-center text-xs text-muted">
+            AI-generated for fun — results are creative interpretations and may not be accurate.
+          </p>
         </div>
       )}
 

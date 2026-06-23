@@ -87,6 +87,15 @@ body {
   border-color: rgba(255, 255, 255, 0.16);
 }
 
+@keyframes progressSlide {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(420%);
+  }
+}
+
 @keyframes pulse-glow {
   0%,
   100% {
